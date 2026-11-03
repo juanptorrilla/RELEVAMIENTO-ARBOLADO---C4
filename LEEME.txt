@@ -1,0 +1,15 @@
+PROYECTO ANDROID - RELEVAMIENTO ARBOLADO
+
+Este proyecto conserva el HTML original y prepara una compilación APK en GitHub Actions (sin instalar Android Studio).
+
+Incluye:
+- Aplicación Capacitor para Android.
+- PDF-lib como dependencia local empaquetada en la compilación.
+- Guardado automático local del borrador (IndexedDB).
+- Historial con recuperación de relevamientos.
+- Exportación e importación de copias JSON.
+- Flujo GitHub Actions para compilar APK debug y publicar el archivo como artefacto.
+
+Para compilar: subir el contenido de esta carpeta a un repositorio GitHub, pestaña Actions, ejecutar “Generar APK Android” (o esperar al push a main). Descargar el artefacto relevamiento-arbolado-apk.
+
+IMPORTANTE: este paquete todavía no es un APK. La compilación debe ejecutarse en GitHub Actions y luego hay que instalar y probar el APK en un teléfono Android, especialmente cámara, firma, generación PDF e historial.

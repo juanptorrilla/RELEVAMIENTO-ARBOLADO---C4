@@ -1,0 +1,6 @@
+{
+  "appId": "ar.gob.comuna4.relevamiento",
+  "appName": "Relevamiento Arbolado",
+  "webDir": "web",
+  "bundledWebRuntime": false
+}
