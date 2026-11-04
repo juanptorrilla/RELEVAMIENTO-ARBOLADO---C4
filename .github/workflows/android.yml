@@ -38,6 +38,3 @@ jobs:
         with:
           name: relevamiento-arbolado-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
-path: android/app/build/outputs/apk/debug/app-debug.apkpath: android/app/build/outputs/apk/debug/app-debug.apk
-          name: relevamiento-arbolado-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apkk/debug/app-debug.apk
