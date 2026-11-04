@@ -175,7 +175,7 @@ button.secondary{background:#e8efea;color:#244c39}
 <div id="historyList" class="status">Todavía no hay relevamientos guardados.</div></section>
 <section><div class="actions">
 <button id="generate" type="button">Generar PDF completo</button>
-<button id="openPdf" type="button" class="secondary" disabled>Ver / compartir último PDF</button>
+<button id="openPdf" type="button" class="secondary" disabled>Ver último PDF</button><button id="sharePdf" type="button" class="secondary" disabled>Compartir / enviar a Drive</button>
 <button id="reset" type="button" class="secondary">Limpiar formulario</button>
 </div><p class="status" id="status">El PDF se genera en este dispositivo. No se envían los datos a ningún servidor.</p></section>
 </main>
@@ -214,7 +214,7 @@ canvas.addEventListener("contextmenu",e=>e.preventDefault());
 $("clearSign").onclick=()=>{inspectorSelect.value="";selectedInspector=null;$("nombre").value="";$("dni").value="";ctx.clearRect(0,0,canvas.width,canvas.height);hasSignature=false;};
 // Persistencia local: borrador automático, historial y copias de seguridad.
 const DB_NAME="relevamiento_arbolado_db", DB_STORE="app", DB_KEY="principal";
-let lastPdfUri=null, lastPdfBlobUrl=null, lastPdfName="";
+let lastPdfUri=null, lastPdfBlobUrl=null, lastPdfName="", lastDownloadUri=null;
 let appState={draft:null,history:[]}, saveTimer=null, restoring=false;
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>req.result.createObjectStore(DB_STORE);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 async function readState(){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,"readonly"),r=tx.objectStore(DB_STORE).get(DB_KEY);r.onsuccess=()=>resolve(r.result||{draft:null,history:[]});r.onerror=()=>reject(r.error);});}
@@ -297,14 +297,26 @@ $("generate").onclick=async()=>{
   const cleanPart=v=>(v||"").trim().replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ");
   lastPdfName=(cleanPart($("calle").value)+" "+cleanPart($("numero").value)).trim()||"Acta de inspeccion";lastPdfName+=".pdf";
   if(lastPdfBlobUrl)URL.revokeObjectURL(lastPdfBlobUrl);lastPdfBlobUrl=URL.createObjectURL(blob);lastPdfUri=null;
-  try{if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Share){const base64= btoa(String.fromCharCode(...new Uint8Array(out)));const fs=window.Capacitor.Plugins.Filesystem;const saved=await fs.writeFile({path:lastPdfName,data:base64,directory:"CACHE"});lastPdfUri=saved.uri;}}catch(nativeErr){console.warn("No se pudo preparar el PDF para compartir desde Android",nativeErr);}
-  $("openPdf").disabled=false;
-  const a=document.createElement("a");a.href=lastPdfBlobUrl;a.download=lastPdfName;a.click();
-  await saveRecord();$("status").textContent="PDF generado: "+lastPdfName+". Usá ‘Ver / compartir último PDF’ para abrirlo o guardarlo en otra aplicación.";
+  const base64=bytesToBase64(out);
+  let savedInDownloads=false;
+  try{
+   if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins){
+    const fs=window.Capacitor.Plugins.Filesystem;
+    if(fs){const cached=await fs.writeFile({path:lastPdfName,data:base64,directory:"CACHE",recursive:true});lastPdfUri=cached.uri;}
+    const downloads=window.Capacitor.Plugins.Downloads;
+    if(downloads){const stored=await downloads.savePdf({fileName:lastPdfName,data:base64});lastDownloadUri=stored.uri;savedInDownloads=true;}
+   }
+  }catch(nativeErr){console.warn("No se pudo guardar el PDF en Descargas de Android",nativeErr);}
+  $("openPdf").disabled=false;$("sharePdf").disabled=false;
+  if(!savedInDownloads){const a=document.createElement("a");a.href=lastPdfBlobUrl;a.download=lastPdfName;a.click();}
+  await saveRecord();
+  $("status").textContent=savedInDownloads?"PDF generado y guardado en Descargas/Comuna 4 - Relevamientos: "+lastPdfName+". Desde ‘Ver / compartir último PDF’ podés abrirlo o enviarlo a Google Drive.":"PDF generado: "+lastPdfName+". Se intentó descargarlo; usá ‘Ver / compartir último PDF’ para abrirlo o enviarlo a Google Drive.";
  }catch(err){console.error(err);$("status").textContent="No se pudo generar el PDF: "+err.message;}
  finally{$("generate").disabled=false;}
 };
-$("openPdf").addEventListener("click",async()=>{try{if(lastPdfUri&&window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Share){await window.Capacitor.Plugins.Share.share({title:lastPdfName,text:"Acta de inspección",url:lastPdfUri,dialogTitle:"Abrir o guardar PDF"});}else if(lastPdfBlobUrl){window.open(lastPdfBlobUrl,"_blank");}else{$("status").textContent="Primero generá un PDF.";}}catch(e){console.error(e);$("status").textContent="No se pudo abrir el menú para compartir el PDF: "+e.message;}});
+function bytesToBase64(bytes){let binary="";const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk){binary+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+chunk,bytes.length)));}return btoa(binary);}
+$("openPdf").addEventListener("click",async()=>{try{const downloads=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Downloads;if(lastDownloadUri&&downloads&&downloads.openPdf){await downloads.openPdf({uri:lastDownloadUri});}else if(lastPdfBlobUrl){window.open(lastPdfBlobUrl,"_blank");}else{$("status").textContent="Primero generá un PDF.";}}catch(e){console.error(e);$("status").textContent="No se pudo abrir el PDF: "+e.message;}});
+$("sharePdf").addEventListener("click",async()=>{try{if(lastPdfUri&&window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Share){await window.Capacitor.Plugins.Share.share({title:lastPdfName,text:"Acta de inspección — Relevamiento de arbolado Comuna 4",files:[lastPdfUri],dialogTitle:"Compartir PDF o guardar en Google Drive"});}else if(lastPdfBlobUrl){const a=document.createElement("a");a.href=lastPdfBlobUrl;a.download=lastPdfName;a.click();}else{$("status").textContent="Primero generá un PDF.";}}catch(e){console.error(e);$("status").textContent="No se pudo abrir el menú para compartir el PDF: "+e.message;}});
 async function toJpeg(file){if(file.type==="image/jpeg")return file.arrayBuffer();const url=URL.createObjectURL(file);try{const im=new Image();await new Promise((res,rej)=>{im.onload=res;im.onerror=rej;im.src=url;});const c=document.createElement("canvas");c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext("2d").drawImage(im,0,0);const b=await new Promise(r=>c.toBlob(r,"image/jpeg",.9));return b.arrayBuffer();}finally{URL.revokeObjectURL(url);}}
 $("reset").onclick=()=>{if(!confirm("¿Borrar todos los datos ingresados?"))return;textFields.forEach(id=>$(id).value="");checks.forEach(id=>$(id).checked=false);photos=[];renderPhotos();$("clearSign").click();$("fecha").value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);syncAddress();scheduleSave();};
 </script>
