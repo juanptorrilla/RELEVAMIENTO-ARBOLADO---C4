@@ -1,15 +1,19 @@
-PROYECTO ANDROID - RELEVAMIENTO ARBOLADO
+RELEVAMIENTO ARBOLADO - COMUNA 4
 
-Este proyecto conserva el HTML original y prepara una compilación APK en GitHub Actions (sin instalar Android Studio).
+Esta carpeta contiene el proyecto para generar el APK de Android.
 
-Incluye:
-- Aplicación Capacitor para Android.
-- PDF-lib como dependencia local empaquetada en la compilación.
-- Guardado automático local del borrador (IndexedDB).
-- Historial con recuperación de relevamientos.
-- Exportación e importación de copias JSON.
-- Flujo GitHub Actions para compilar APK debug y publicar el archivo como artefacto.
+Cambios incluidos en esta versión:
+- Historial de relevamientos con ubicación CALLE + NÚMERO.
+- Recuperar un relevamiento guardado.
+- Eliminar un relevamiento con confirmación.
+- PDF con nombre basado en CALLE + NÚMERO.
+- Acceso para ver/compartir el último PDF.
+- Guardado local en el dispositivo y opciones de copia de seguridad.
+- Ícono de aplicación de Comuna 4.
 
-Para compilar: subir el contenido de esta carpeta a un repositorio GitHub, pestaña Actions, ejecutar “Generar APK Android” (o esperar al push a main). Descargar el artefacto relevamiento-arbolado-apk.
+Para generar el APK:
+1. Subir el contenido de esta carpeta al repositorio de GitHub, reemplazando los archivos anteriores.
+2. En GitHub, abrir Actions y ejecutar el flujo “Generar APK Android”.
+3. Descargar el artefacto “relevamiento-arbolado-apk” cuando termine correctamente.
 
-IMPORTANTE: este paquete todavía no es un APK. La compilación debe ejecutarse en GitHub Actions y luego hay que instalar y probar el APK en un teléfono Android, especialmente cámara, firma, generación PDF e historial.
+Los datos de los relevamientos se guardan localmente en cada dispositivo. No se envían a un servidor.
