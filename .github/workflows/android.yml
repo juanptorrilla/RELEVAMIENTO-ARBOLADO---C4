@@ -32,6 +32,12 @@ jobs:
       - name: Crear proyecto Android
         run: npx cap add android
 
+      - name: Instalar función nativa de guardado en Descargas
+        run: python scripts/install-native-plugin.py
+
+      - name: Generar icono de Comuna 4
+        run: npx capacitor-assets generate --android
+
       - name: Sincronizar Capacitor
         run: npx cap sync android
 
