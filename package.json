@@ -1,6 +1,6 @@
 {
   "name": "relevamiento-arbolado",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
   "scripts": {
     "copy-pdf-lib": "node -e \"require('fs').copyFileSync('node_modules/pdf-lib/dist/pdf-lib.min.js','web/pdf-lib.min.js')\"",

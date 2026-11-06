@@ -322,18 +322,15 @@ $("generate").onclick=async()=>{
    banda:[354,650],tutorado:[354,662],seguimiento:[527,650],vereda_elevada:[621,650]
   };
   Object.entries(m).forEach(([id,xy])=>mark(id,xy[0],xy[1]));
-  // Página 2: fotografías dentro del recuadro existente, sin cubrir rótulo ni calle.
+  // Página 2: respeta la orientación EXIF (vertical/horizontal) y mantiene proporciones.
   if(photos.length){
    const box={x:177.5*s2,y:229*s2,w:460*s2,h:592*s2};
-   // Una fotografía debajo de la otra: evita la disposición apaisada en dos columnas.
    const rows=photos.length,gap=8,cellH=(box.h-gap*(rows-1))/rows;
-   const cellW=Math.min(box.w,cellH*0.82);
    for(let i=0;i<photos.length;i++){
-    const f=photos[i],buf=await f.arrayBuffer();let im;
-    if(f.type==="image/png")im=await doc.embedPng(buf);else im=await doc.embedJpg(await toJpeg(f));
-    const scale=Math.min(cellW/im.width,cellH/im.height);
+    const im=await embedPhotoUpright(doc,photos[i]);
+    const scale=Math.min(box.w/im.width,cellH/im.height);
     const w=im.width*scale,h=im.height*scale;
-    const x=box.x+(box.w-cellW)/2+(cellW-w)/2;
+    const x=box.x+(box.w-w)/2;
     const y=box.y+box.h-(i+1)*cellH-i*gap+(cellH-h)/2;
     p2.drawImage(im,{x,y,width:w,height:h});
    }
@@ -363,7 +360,23 @@ $("generate").onclick=async()=>{
 function bytesToBase64(bytes){let binary="";const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk){binary+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+chunk,bytes.length)));}return btoa(binary);}
 $("openPdf").addEventListener("click",async()=>{try{const downloads=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Downloads;if(lastDownloadUri&&downloads&&downloads.openPdf){await downloads.openPdf({uri:lastDownloadUri});}else if(lastPdfBlobUrl){window.open(lastPdfBlobUrl,"_blank");}else{$("status").textContent="Primero generá un PDF.";}}catch(e){console.error(e);$("status").textContent="No se pudo abrir el PDF: "+e.message;}});
 $("sharePdf").addEventListener("click",async()=>{try{if(lastPdfUri&&window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Share){await window.Capacitor.Plugins.Share.share({title:lastPdfName,text:"Acta de inspección — Relevamiento de arbolado Comuna 4",files:[lastPdfUri],dialogTitle:"Enviar PDF a Google Drive"});}else if(lastPdfBlobUrl){const a=document.createElement("a");a.href=lastPdfBlobUrl;a.download=lastPdfName;a.click();}else{$("status").textContent="Primero generá un PDF.";}}catch(e){console.error(e);$("status").textContent="No se pudo abrir el menú para compartir el PDF: "+e.message;}});
-async function toJpeg(file){if(file.type==="image/jpeg")return file.arrayBuffer();const url=URL.createObjectURL(file);try{const im=new Image();await new Promise((res,rej)=>{im.onload=res;im.onerror=rej;im.src=url;});const c=document.createElement("canvas");c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext("2d").drawImage(im,0,0);const b=await new Promise(r=>c.toBlob(r,"image/jpeg",.9));return b.arrayBuffer();}finally{URL.revokeObjectURL(url);}}
+async function embedPhotoUpright(doc,file){
+ let source=null,bitmap=null;
+ try{
+  if("createImageBitmap" in window){
+   try{bitmap=await createImageBitmap(file,{imageOrientation:"from-image"});}catch(_){bitmap=await createImageBitmap(file);}
+   source=bitmap;
+  }else{
+   const url=URL.createObjectURL(file);
+   try{source=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url;});}
+   finally{URL.revokeObjectURL(url);}
+  }
+  const c=document.createElement("canvas");c.width=source.width||source.naturalWidth;c.height=source.height||source.naturalHeight;
+  c.getContext("2d").drawImage(source,0,0,c.width,c.height);
+  const blob=await new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error("No se pudo procesar la fotografía")),"image/jpeg",.96));
+  return await doc.embedJpg(await blob.arrayBuffer());
+ }finally{if(bitmap&&bitmap.close)bitmap.close();}
+}
 $("reset").onclick=()=>{if(!confirm("¿Borrar los datos del relevamiento actual? Los registros guardados en el historial se conservarán."))return;textFields.filter(id=>id!=="nombre"&&id!=="dni").forEach(id=>$(id).value="");checks.forEach(id=>$(id).checked=false);photos=[];renderPhotos();if(selectedInspector){$("nombre").value=selectedInspector.name;$("dni").value=selectedInspector.dni;drawInspectorSignature(selectedInspector);}else if(inspectorMode==="new"){ctx.clearRect(0,0,canvas.width,canvas.height);hasSignature=false;}$("fecha").value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);syncAddress();scheduleSave();};
 </script>
 </body></html>

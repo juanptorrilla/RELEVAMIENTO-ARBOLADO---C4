@@ -1,7 +1,7 @@
 RELEVAMIENTO ARBOLADO - COMUNA 4
-VERSIÓN 4 - COPIA DE DESARROLLO
+VERSIÓN 5 - ORIENTACIÓN DE FOTOGRAFÍAS
 
-Esta carpeta contiene una copia independiente del proyecto 3.1 para desarrollar la Versión 4. El ZIP original 3.1 no se modifica.
+Esta carpeta contiene la Versión 5 del proyecto, basada en la Versión 4. La Versión 4 original no se modifica.
 
 Cambios incorporados en esta copia:
 - Pantalla inicial para seleccionar inspector antes de ingresar a la planilla.
@@ -9,7 +9,8 @@ Cambios incorporados en esta copia:
 - Los datos de inspectores registrados se completan y quedan bloqueados; la firma no se puede dibujar ni borrar.
 - “Nuevo inspector” habilita nombre, DNI y firma manuscrita para ese relevamiento.
 - Se agrega la casilla ID entre AVISO y ARME; AVISO admite hasta 15 caracteres e ID hasta 10.
-- Las fotografías se presentan en una columna vertical en el PDF y en la vista previa, con menor tamaño de presentación y conservando el archivo original para el PDF.
+- Se corrige la orientación de las fotografías al incorporarlas al PDF: se respeta la orientación EXIF del celular (vertical u horizontal).
+- Las fotos mantienen su proporción original: no se estiran ni se recortan; se ajustan al espacio disponible.
 - Se retiran los botones de importar/exportar copias. Se mantiene el guardado interno y el botón manual “Enviar PDF a Drive” (abre el menú de compartir de Android; el inspector elige Drive).
 - Generar PDF guarda el documento en Descargas; el borrador se conserva localmente sin crear un PDF adicional.
 
@@ -23,4 +24,4 @@ Para generar el APK:
 2. En GitHub, abrir Actions y ejecutar “Generar APK Android”.
 3. Descargar el artefacto “relevamiento-arbolado-apk” cuando termine correctamente.
 
-Nota: esta es una copia de desarrollo. Antes de usarla operativamente, compilar y probar en un celular: selección de inspectores, firma, guardado/recuperación, fotos y ubicación de los campos en el PDF.
+Nota: esta es una copia de desarrollo. Antes de usarla operativamente, compilar y probar en un celular: selección de inspectores, firma, guardado/recuperación, fotos verticales y horizontales, y ubicación de los campos en el PDF.
