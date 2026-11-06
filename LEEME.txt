@@ -1,21 +1,26 @@
 RELEVAMIENTO ARBOLADO - COMUNA 4
+VERSIÓN 4 - COPIA DE DESARROLLO
 
-Esta carpeta contiene el proyecto para generar el APK de Android.
+Esta carpeta contiene una copia independiente del proyecto 3.1 para desarrollar la Versión 4. El ZIP original 3.1 no se modifica.
 
-Versión 3 actualizada:
-- Conserva el historial de relevamientos, recuperación y eliminación completa con confirmación.
-- Conserva el guardado local del formulario y las copias de seguridad.
-- Genera el PDF con nombre basado en CALLE + NÚMERO.
-- Guarda el PDF en Descargas/Comuna 4 - Relevamientos en Android 10 o superior.
-- Permite abrir o compartir el último PDF desde el menú de Android. Desde allí se puede elegir Google Drive y la cuenta configurada en el teléfono.
-- Utiliza el ícono verde de Comuna 4.
-- Los datos del relevamiento permanecen en el dispositivo; el envío a Drive es voluntario y lo inicia el usuario.
+Cambios incorporados en esta copia:
+- Pantalla inicial para seleccionar inspector antes de ingresar a la planilla.
+- Se conserva el listado de inspectores y sus firmas originales; se agrega “Nuevo inspector”.
+- Los datos de inspectores registrados se completan y quedan bloqueados; la firma no se puede dibujar ni borrar.
+- “Nuevo inspector” habilita nombre, DNI y firma manuscrita para ese relevamiento.
+- Se agrega la casilla ID entre AVISO y ARME; AVISO admite hasta 15 caracteres e ID hasta 10.
+- Las fotografías se presentan en una columna vertical en el PDF y en la vista previa, con menor tamaño de presentación y conservando el archivo original para el PDF.
+- Se retiran los botones de importar/exportar copias. Se mantiene el guardado interno y el botón manual “Enviar PDF a Drive” (abre el menú de compartir de Android; el inspector elige Drive).
+- Generar PDF guarda el documento en Descargas; el borrador se conserva localmente sin crear un PDF adicional.
+
+Funciones que se mantienen:
+- Guardado local del borrador e historial, recuperación y eliminación con confirmación.
+- Generación del PDF a partir de la planilla original.
+- Ícono verde de Comuna 4 y función nativa de guardado en Descargas.
 
 Para generar el APK:
-1. Subir el contenido de esta carpeta al repositorio de GitHub, reemplazando los archivos anteriores.
+1. Subir el contenido de esta carpeta al repositorio de GitHub.
 2. En GitHub, abrir Actions y ejecutar “Generar APK Android”.
 3. Descargar el artefacto “relevamiento-arbolado-apk” cuando termine correctamente.
 
-Requisitos técnicos:
-- Android 10 o superior para guardar directamente en la carpeta Descargas.
-- Para guardar una copia en Google Drive, seleccionar Drive en el menú de compartir y confirmar la cuenta/carpeta de destino.
+Nota: esta es una copia de desarrollo. Antes de usarla operativamente, compilar y probar en un celular: selección de inspectores, firma, guardado/recuperación, fotos y ubicación de los campos en el PDF.
