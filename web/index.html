@@ -41,6 +41,7 @@ button.secondary{background:#e8efea;color:#244c39}
 <div class="actions" style="margin-top:12px"><button id="enterForm" type="button" disabled>Ingresar a la planilla</button></div>
 </section>
 <div id="formContent" hidden>
+<div class="actions" style="margin:10px 0 14px"><button id="backToInspectors" type="button" class="secondary">← Volver a selección de inspector</button></div>
 <section><h2>Datos iniciales</h2><div class="grid initial-fields">
 <div class="field"><label>Aviso</label><input id="aviso" maxlength="15"></div>
 <div class="field"><label>ID</label><input id="identificacion" maxlength="10" placeholder="ID"></div>
@@ -224,6 +225,26 @@ $("enterForm").addEventListener("click",async()=>{
   requestAnimationFrame(()=>{resizeCanvas();if(selectedInspector)drawInspectorSignature(selectedInspector);});
   if(appState.draft){const snap=appState.draft;await restoreSnapshot(snap,true);if(inspectorMode==="new" && snap.inspector!=="new"){ctx.clearRect(0,0,canvas.width,canvas.height);hasSignature=false;}}
   scheduleSave();window.scrollTo(0,0);
+});
+$("backToInspectors").addEventListener("click",async()=>{
+  const ok=confirm("¿Volver a la selección de inspector? El relevamiento actual que no hayas guardado se eliminará. Los relevamientos guardados en el historial se conservarán.");
+  if(!ok)return;
+  clearTimeout(saveTimer);
+  restoring=true;
+  try{
+    appState.draft=null;
+    await writeState();
+    textFields.forEach(id=>{if($(id))$(id).value="";});
+    checks.forEach(id=>{if($(id))$(id).checked=false;});
+    photos=[];renderPhotos();
+    ctx.clearRect(0,0,canvas.width,canvas.height);hasSignature=false;
+    inspectorSelect.value="";setInspectorMode("");
+    $("fecha").value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+    syncAddress();
+  }catch(e){console.error("No se pudo descartar el borrador",e);$("status").textContent="No se pudo descartar el borrador. Intentá nuevamente.";return;}
+  finally{restoring=false;}
+  $("formContent").hidden=true;$("entryScreen").hidden=false;
+  window.scrollTo(0,0);
 });
 function dataUrlToBytes(dataUrl){const raw=atob(dataUrl.split(",")[1]);const out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;}
 const checks = ["seco","semiseco","incl_mayor","incl_menor","hacia_calle","hacia_prop","hacia_largo","descopado","descopado_brotado","copa_desbalanceada","cav_peq_basal","cav_peq_media","cav_peq_alto","cav_gr_basal","cav_gr_media","cav_gr_alto","fungicas","codominancias_fuste","chorreados","raiz_expuesta","levanta_vereda","fisuras_frente","tocones","bajas","codominancias_ramas","excesivas","secas","cavidades_ramas","mal_angulo","quebradas","invaden","color_anormal","manchas","def_total","def_parcial","insectos","obj_riesgo","obj_interferencias","obj_sitio","obj_regulacion","p_formacion","p_limpieza","p_aclareo","p_refaldado","p_terciado","p_balanceo","extr_vereda","extr_svereda","extr_cierre_plantera","corte_superficial","corte_profundo","trasplante","tratamiento","plantacion","cierre_plantera","apertura_plantera","ampliacion_plantera","reduccion_plantera","correr_plantera","banda","tutorado","seguimiento","vereda_elevada"];

@@ -1,9 +1,11 @@
 RELEVAMIENTO ARBOLADO - COMUNA 4
-VERSIÓN 5 - ORIENTACIÓN DE FOTOGRAFÍAS
+VERSIÓN 6 - REGRESO A SELECCIÓN DE INSPECTOR Y ORIENTACIÓN DE FOTOGRAFÍAS
 
-Esta carpeta contiene la Versión 5 del proyecto, basada en la Versión 4. La Versión 4 original no se modifica.
+Esta carpeta contiene la Versión 6 del proyecto, basada en la Versión 5. Las versiones anteriores no se modifican.
 
 Cambios incorporados en esta copia:
+- Se agrega el botón “Volver a selección de inspector” dentro de la planilla. Al utilizarlo, solicita confirmación, descarta el borrador no guardado y vuelve al menú inicial.
+- Los relevamientos guardados manualmente en el historial se conservan; el borrador no guardado se elimina.
 - Pantalla inicial para seleccionar inspector antes de ingresar a la planilla.
 - Se conserva el listado de inspectores y sus firmas originales; se agrega “Nuevo inspector”.
 - Los datos de inspectores registrados se completan y quedan bloqueados; la firma no se puede dibujar ni borrar.
