@@ -1,0 +1,26 @@
+INTEGRACIÓN CON GOOGLE SHEETS — COMUNA 4
+
+DESTINO
+- Archivo: RECLAMOS SUACI SLA FINAL
+- Spreadsheet ID: 1l_58opct0coaz2suIsez7UDtB5Wa1RiF
+- Pestaña: gid 1068617970 (la pestaña del enlace compartido).
+
+QUÉ HACE EL ENVÍO
+- El botón “Enviar datos a planilla” es independiente de “Generar PDF” y “Enviar PDF a Drive”.
+- Busca el número de reclamo existente en la columna A. Si no lo encuentra, no escribe nada.
+- En la fila correspondiente completa I:R: fecha de relevamiento, intervención según inspector, especie, DAP, altura del árbol, M2, código de baldosa, riesgo, observación del inspector y nombre del inspector.
+- Si el mismo reclamo tiene otro árbol y ya se completó I:R en la fila original, agrega una fila nueva copiando la fila existente como base (A:X), para conservar los datos del reclamo, fórmulas, validaciones y controles. En esa nueva fila reemplaza únicamente I:R por los datos del segundo árbol.
+- La fila original nunca se modifica. La copia de A:X se realiza solamente en la nueva fila; por lo tanto, los datos originales del reclamo se replican y las fórmulas/controles se conservan en la línea adicional.
+- Los reintentos del mismo envío no deben duplicar una ficha.
+- Sin Internet, avisa y conserva el relevamiento en el celular.
+
+ACTIVACIÓN (UNA SOLA VEZ)
+1. Abrir https://script.google.com/ con una cuenta que tenga permiso de edición sobre la planilla.
+2. Crear un proyecto nuevo y pegar el contenido de Code.gs incluido en esta carpeta.
+3. Guardar y elegir Implementar > Nueva implementación > Aplicación web.
+4. Ejecutar como: Yo. Configurar el acceso de acuerdo con las políticas de la organización. El token compartido incluido en el APK no es autenticación fuerte; para datos institucionales sensibles se recomienda un backend institucional con autenticación.
+5. Implementar y copiar la URL terminada en /exec.
+6. En el teléfono, tocar “Enviar datos a planilla” y pegar esa URL cuando la aplicación la solicite.
+
+IMPORTANTE
+La conexión no queda activa hasta desplegar el Apps Script y guardar su URL en la aplicación. Antes del uso operativo hay que hacer una prueba controlada y verificar que solo se hayan completado I:R.

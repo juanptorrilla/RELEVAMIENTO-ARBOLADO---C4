@@ -1,5 +1,5 @@
 RELEVAMIENTO ARBOLADO - COMUNA 4
-VERSIÓN 6 - REGRESO A SELECCIÓN DE INSPECTOR Y ORIENTACIÓN DE FOTOGRAFÍAS
+VERSIÓN 6 - AJUSTES SOLICITADOS: FECHA, INSPECTOR Y FOTOS
 
 Esta carpeta contiene la Versión 6 del proyecto, basada en la Versión 5. Las versiones anteriores no se modifican.
 
@@ -11,9 +11,12 @@ Cambios incorporados en esta copia:
 - Los datos de inspectores registrados se completan y quedan bloqueados; la firma no se puede dibujar ni borrar.
 - “Nuevo inspector” habilita nombre, DNI y firma manuscrita para ese relevamiento.
 - Se agrega la casilla ID entre AVISO y ARME; AVISO admite hasta 15 caracteres e ID hasta 10.
+- Se actualiza el inspector BELEN ALEGRE a ANDREA BELÉN ALEGRE, conservando su DNI y firma registrados.
+- Se separan las acciones “Tomar fotografía” (cámara) y “Agregar foto desde el celular” (galería). Ambas admiten hasta cuatro imágenes en total.
+- La fecha del PDF se imprime en formato DD/MM/AAAA y el campo de fecha se declara con configuración regional es-AR.
 - Se corrige la orientación de las fotografías al incorporarlas al PDF: se respeta la orientación EXIF del celular (vertical u horizontal).
 - Las fotos mantienen su proporción original: no se estiran ni se recortan; se ajustan al espacio disponible.
-- Se retiran los botones de importar/exportar copias. Se mantiene el guardado interno y el botón manual “Enviar PDF a Drive” (abre el menú de compartir de Android; el inspector elige Drive).
+- Se retiran los botones de importar/exportar copias. Se mantiene el guardado interno y el botón manual “Enviar PDF a Drive” (envía una copia al flujo de Drive configurado en el dispositivo).
 - Generar PDF guarda el documento en Descargas; el borrador se conserva localmente sin crear un PDF adicional.
 
 Funciones que se mantienen:
@@ -27,3 +30,11 @@ Para generar el APK:
 3. Descargar el artefacto “relevamiento-arbolado-apk” cuando termine correctamente.
 
 Nota: esta es una copia de desarrollo. Antes de usarla operativamente, compilar y probar en un celular: selección de inspectores, firma, guardado/recuperación, fotos verticales y horizontales, y ubicación de los campos en el PDF.
+
+
+INTEGRACIÓN CON GOOGLE SHEETS
+Consultar google-apps-script/INSTRUCCIONES.txt. Se agregó el botón independiente “Enviar datos a planilla” y el código Apps Script para la pestaña de destino indicada. La integración requiere desplegar el script y pegar la URL /exec en la app; no está activa hasta realizar ese paso y verificar un envío de prueba.
+
+
+ACTUALIZACIÓN DE INTEGRACIÓN CON RECLAMOS
+El botón “Enviar datos a planilla” apunta al Spreadsheet ID y gid compartidos por el usuario. El script busca el reclamo existente por la columna A y completa únicamente I:R. No modifica los datos originales A:E de filas existentes ni las columnas F:H o S:X. Para un segundo árbol del mismo reclamo agrega una fila nueva copiando la fila original como base (A:X), de modo que también se conserven las fórmulas, validaciones y controles; luego completa I:R con los datos del segundo árbol. La fila original no se modifica. La conexión requiere desplegar Apps Script y guardar la URL /exec en la aplicación.
