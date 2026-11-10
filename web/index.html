@@ -177,7 +177,7 @@ button.secondary{background:#e8efea;color:#244c39}
 <div class="actions" style="margin-top:8px"><button type="button" class="secondary" id="clearSign">Borrar firma</button></div>
 </section>
 <section><h2>Fotografías del ejemplar</h2>
-<div class="photo-actions"><label class="filelabel" for="photosCamera">Tomar fotografía</label><label class="filelabel" for="photosGallery">Buscar foto en el celular</label></div>
+<div class="photo-actions"><label class="filelabel" for="photosCamera">Tomar fotografía</label><button type="button" class="secondary" id="photosGalleryPick">Buscar foto en el celular</button></div>
 <input id="photosCamera" type="file" accept="image/*" capture="environment" multiple hidden><input id="photosGallery" type="file" accept="image/*" multiple hidden>
 <div id="photoList" class="photo-list"></div><p class="note">Las imágenes se ubicarán en el espacio fotográfico de la segunda página. Se admite más de una fotografía.</p>
 </section>
@@ -187,7 +187,7 @@ button.secondary{background:#e8efea;color:#244c39}
 <div id="historyList" class="status">Todavía no hay relevamientos guardados.</div></section>
 <section><div class="actions">
 <button id="generate" type="button">Generar PDF completo</button>
-<button id="openPdf" type="button" class="secondary" disabled>Ver último PDF</button><button id="sharePdf" type="button" class="secondary" disabled>Enviar PDF a Drive</button><button id="sendSheet" type="button" class="secondary">Enviar datos a planilla</button>
+<button id="openPdf" type="button" class="secondary" disabled>Ver último PDF</button><button id="sharePdf" type="button" class="secondary">Enviar PDF a Drive</button><button id="sendSheet" type="button" class="secondary">Enviar datos a planilla</button>
 <button id="reset" type="button" class="secondary">Limpiar formulario</button>
 </div><p class="status" id="status">El relevamiento se guarda en este dispositivo. Los envíos a Drive y a la planilla son acciones voluntarias y requieren conexión a internet.</p></section>
 </div>
@@ -262,7 +262,31 @@ function syncAddress(){$("calle2").value=[$("calle").value.trim(),$("numero").va
 ["calle","numero"].forEach(id=>$(id).addEventListener("input",syncAddress));
 let photos=[];
 function addPhotos(input){input.addEventListener("change",e=>{const incoming=[...e.target.files];photos=[...photos,...incoming].slice(0,4);renderPhotos();scheduleSave();e.target.value="";if(photos.length>=4)$("status").textContent="Se admite un máximo de cuatro fotografías.";});}
-addPhotos($("photosCamera"));addPhotos($("photosGallery"));
+addPhotos($("photosCamera"));
+$("photosGalleryPick").addEventListener("click",async()=>{
+ try{
+  const picker=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.PhotoPicker;
+  if(picker&&picker.pickImages){
+   $("photosGalleryPick").disabled=true;
+   $("status").textContent="Abriendo la galería del celular...";
+   const result=await picker.pickImages({max:Math.max(0,4-photos.length)});
+   const selected=(result&&result.photos)||[];
+   for(const item of selected){
+    if(photos.length>=4)break;
+    if(!item||!item.data)continue;
+    const mime=item.mimeType||"image/jpeg";
+    const binary=atob(item.data),bytes=new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+    const file=new File([bytes],item.name||("foto-"+(photos.length+1)+".jpg"),{type:mime});
+    file._dataUrl="data:"+mime+";base64,"+item.data;
+    photos.push(file);
+   }
+   renderPhotos();await saveDraft();
+   $("status").textContent=selected.length?"Fotografía(s) incorporada(s): "+photos.length+" de 4.":"No se seleccionaron fotografías.";
+  }else{$("photosGallery").click();}
+ }catch(e){console.error(e);$("status").textContent="No se pudo abrir la galería: "+(e.message||e);}
+ finally{$("photosGalleryPick").disabled=false;}
+});
 function renderPhotos(){const box=$("photoList");box.innerHTML="";photos.forEach((f,i)=>{const img=document.createElement("img");img.src=URL.createObjectURL(f);img.alt="Foto "+(i+1);box.appendChild(img);});}
 const canvas=$("signature"),ctx=canvas.getContext("2d");let drawing=false,hasSignature=false;
 function resizeCanvas(){const r=canvas.getBoundingClientRect();const ratio=window.devicePixelRatio||1;const saved=hasSignature?canvas.toDataURL("image/png"):null;canvas.width=Math.round(r.width*ratio);canvas.height=Math.round(r.height*ratio);ctx.setTransform(ratio,0,0,ratio,0,0);ctx.lineWidth=2.4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#17231b";if(saved){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,r.width,r.height);im.src=saved;}}
@@ -298,9 +322,9 @@ function topY(pageHeight, imageY, scale){return pageHeight-imageY*scale;}
 function putText(page,txt,x,yPx,scale,size=8,maxWidth=0){if(!txt)return;let s=String(txt);if(maxWidth){while(s.length>2 && page.doc && false){} }page.drawText(s,{x:x*scale,y:topY(page.getHeight(),yPx,scale),size,font:font,color:PDFLib.rgb(0.05,0.05,0.05),maxWidth:maxWidth||undefined});}
 function putMark(page,x,y,scale){page.drawText("X",{x:x*scale-1.4,y:topY(page.getHeight(),y,scale)-1.5,size:4.5,font:font,bold:true,color:PDFLib.rgb(0,0,0)});}
 let font;
-$("generate").onclick=async()=>{
+async function createPdf(saveLocal){
  try{
-  $("generate").disabled=true;$("status").textContent="Generando el PDF...";
+  if(saveLocal)$("generate").disabled=true;$("status").textContent=saveLocal?"Generando el PDF para guardar en el celular...":"Preparando el PDF para enviarlo a Google Drive...";
   const bytes=Uint8Array.from(atob(PDF_B64),c=>c.charCodeAt(0));
   const doc=await PDFLib.PDFDocument.load(bytes);font=await doc.embedFont(PDFLib.StandardFonts.Helvetica);
   const p1=doc.getPages()[0],p2=doc.getPages()[1],s1=p1.getWidth()/1320,s2=p2.getWidth()/1320;
@@ -366,32 +390,52 @@ $("generate").onclick=async()=>{
    }
   }
   if(selectedInspector && selectedInspector.signature){const sig=await doc.embedPng(dataUrlToBytes(selectedInspector.signature));p1.drawImage(sig,{x:313*s1,y:topY(p1.getHeight(),891,s1),width:104*s1,height:32*s1});}else if(hasSignature){const sig=await doc.embedPng(canvas.toDataURL());p1.drawImage(sig,{x:313*s1,y:topY(p1.getHeight(),891,s1),width:104*s1,height:32*s1});}
-  const out=await doc.save();const blob=new Blob([out],{type:"application/pdf"});
-  const cleanPart=v=>(v||"").trim().replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ");
-  lastPdfName=(cleanPart($("calle").value)+" "+cleanPart($("numero").value)).trim()||"Acta de inspeccion";lastPdfName+=".pdf";
-  if(lastPdfBlobUrl)URL.revokeObjectURL(lastPdfBlobUrl);lastPdfBlobUrl=URL.createObjectURL(blob);lastPdfUri=null;
-  const base64=bytesToBase64(out);
-  let savedInDownloads=false;
-  try{
-   if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins){
-    const fs=window.Capacitor.Plugins.Filesystem;
-    if(fs){const cached=await fs.writeFile({path:lastPdfName,data:base64,directory:"CACHE",recursive:true});lastPdfUri=cached.uri;}
-    const downloads=window.Capacitor.Plugins.Downloads;
-    if(downloads){const stored=await downloads.savePdf({fileName:lastPdfName,data:base64});lastDownloadUri=stored.uri;savedInDownloads=true;}
-   }
-  }catch(nativeErr){console.warn("No se pudo guardar el PDF en Descargas de Android",nativeErr);}
-  $("openPdf").disabled=false;$("sharePdf").disabled=false;
-  if(!savedInDownloads){const a=document.createElement("a");a.href=lastPdfBlobUrl;a.download=lastPdfName;a.click();}
+  const out=await doc.save();
+  const cleanPart=v=>(v||"").trim().replace(/[\\\\/:*?"<>|]+/g," ").replace(/\\s+/g," ");
+  const fileName=((cleanPart($("calle").value)+" "+cleanPart($("numero").value)).trim()||"Acta de inspeccion")+".pdf";
+  lastPdfName=fileName;
+  if(saveLocal){
+   const blob=new Blob([out],{type:"application/pdf"});
+   if(lastPdfBlobUrl)URL.revokeObjectURL(lastPdfBlobUrl);
+   lastPdfBlobUrl=URL.createObjectURL(blob);lastPdfUri=null;
+   const base64=bytesToBase64(out);
+   let savedInDownloads=false;
+   try{
+    if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()&&window.Capacitor.Plugins){
+     const fs=window.Capacitor.Plugins.Filesystem;
+     if(fs){const cached=await fs.writeFile({path:lastPdfName,data:base64,directory:"CACHE",recursive:true});lastPdfUri=cached.uri;}
+     const downloads=window.Capacitor.Plugins.Downloads;
+     if(downloads){const stored=await downloads.savePdf({fileName:lastPdfName,data:base64});lastDownloadUri=stored.uri;savedInDownloads=true;}
+    }
+   }catch(nativeErr){console.warn("No se pudo guardar el PDF en Descargas de Android",nativeErr);}
+   $("openPdf").disabled=false;
+   if(!savedInDownloads){const a=document.createElement("a");a.href=lastPdfBlobUrl;a.download=lastPdfName;a.click();}
+   $("status").textContent=savedInDownloads?"PDF generado y guardado en Descargas/Comuna 4 - Relevamientos: "+lastPdfName:"PDF generado: "+lastPdfName+". Se intentó descargarlo.";
+  }
   await saveDraft();
-  $("status").textContent=savedInDownloads?"PDF generado y guardado en Descargas/Comuna 4 - Relevamientos: "+lastPdfName+". Desde “Enviar PDF a Drive” podés subirlo directamente a la carpeta de Drive de Comuna 4.":"PDF generado: "+lastPdfName+". Se intentó descargarlo; usá “Enviar PDF a Drive” cuando tengas conexión para subirlo a Drive.";
- }catch(err){console.error(err);$("status").textContent="No se pudo generar el PDF: "+err.message;}
- finally{$("generate").disabled=false;}
-};
+  return {bytes:out,fileName:lastPdfName};
+ }catch(err){console.error(err);$("status").textContent="No se pudo generar el PDF: "+err.message;return null;}
+ finally{if(saveLocal)$("generate").disabled=false;}
+}
+$("generate").onclick=()=>createPdf(true);
 function bytesToBase64(bytes){let binary="";const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk){binary+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+chunk,bytes.length)));}return btoa(binary);}
 $("openPdf").addEventListener("click",async()=>{try{const downloads=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Downloads;if(lastDownloadUri&&downloads&&downloads.openPdf){await downloads.openPdf({uri:lastDownloadUri});}else if(lastPdfBlobUrl){window.open(lastPdfBlobUrl,"_blank");}else{$("status").textContent="Primero generá un PDF.";}}catch(e){console.error(e);$("status").textContent="No se pudo abrir el PDF: "+e.message;}});
-async function getEndpoint(){let url=localStorage.getItem("c4_apps_script_url");if(!url){url=prompt("Pegá la URL de implementación de Google Apps Script. Se guardará en este celular y no volverá a pedirse.");if(!url)return null;if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url.trim())){alert("La URL no parece ser una URL válida de implementación de Apps Script.");return null;}url=url.trim();localStorage.setItem("c4_apps_script_url",url);}return url;}
+const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbyXus7qgt5v8XZF2rmmMIcVKZpBEs4abA6yL7RDNU90UbnudUxhQJrzKJeIYz4cRGLj/exec";
+async function getEndpoint(){return APPS_SCRIPT_URL;}
 async function postAppsScript(payload){const url=await getEndpoint();if(!url)throw new Error("No se configuró la URL de Apps Script.");const http=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.CapacitorHttp;if(http&&http.post){const r=await http.post({url,headers:{"Content-Type":"application/json"},data:payload,connectTimeout:30000,readTimeout:60000});return typeof r.data==="string"?JSON.parse(r.data):r.data;}const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});return await r.json();}
-$("sharePdf").addEventListener("click",async()=>{try{if(!navigator.onLine){$("status").textContent="No hay conexión a internet. Generá el PDF para conservarlo en Descargas y envialo a Drive cuando vuelva la conexión.";return;}if(!lastPdfBlobUrl){$("status").textContent="Primero generá el PDF.";return;}$("sharePdf").disabled=true;$("status").textContent="Enviando PDF a Google Drive...";const blob=await (await fetch(lastPdfBlobUrl)).blob();const data=bytesToBase64(new Uint8Array(await blob.arrayBuffer()));const result=await postAppsScript({action:"savePdf",token:"C4-ARBOLADO-2026-PLANILLA-4",fileName:lastPdfName,mimeType:"application/pdf",data});if(!result||result.ok!==true)throw new Error(result&&result.error||"El servidor no confirmó el guardado.");$("status").textContent="PDF enviado correctamente a Google Drive: "+lastPdfName;}catch(e){console.error(e);$("status").textContent="No se pudo enviar el PDF a Drive: "+e.message;}finally{$("sharePdf").disabled=!lastPdfBlobUrl;}});
+$("sharePdf").addEventListener("click",async()=>{try{
+ if(!navigator.onLine){$("status").textContent="No hay conexión a internet. Usá “Generar PDF completo” para guardar una copia en Descargas y enviarla a Drive cuando vuelva la conexión.";return;}
+ $("sharePdf").disabled=true;
+ const pdf=await createPdf(false);
+ if(!pdf)throw new Error("No se pudo preparar el PDF.");
+ $("status").textContent="Enviando PDF a Google Drive...";
+ const data=bytesToBase64(pdf.bytes);
+ const result=await postAppsScript({action:"savePdf",token:"C4-ARBOLADO-2026-PLANILLA-4",fileName:pdf.fileName,mimeType:"application/pdf",data});
+ if(!result||result.ok!==true)throw new Error(result&&result.error||"El servidor no confirmó el guardado.");
+ $("status").textContent="PDF enviado correctamente a Google Drive: "+pdf.fileName+". No se guardó una copia en Descargas.";
+ }catch(e){console.error(e);$("status").textContent="No se pudo enviar el PDF a Drive: "+e.message;}
+ finally{$("sharePdf").disabled=false;}
+});
 function interventionSummary(){const names={obj_riesgo:"Reducción de riesgo",obj_interferencias:"Eliminar interferencias",obj_sitio:"Adecuación al sitio",obj_regulacion:"Estructura",p_formacion:"Poda de formación",p_limpieza:"Poda de limpieza",p_aclareo:"Poda de aclareo",p_refaldado:"Refaldado",p_terciado:"Terciado",p_balanceo:"Balanceo",extr_vereda:"Extracción con vereda",extr_svereda:"Extracción sin vereda",extr_cierre_plantera:"Extracción con cierre de plantera",corte_superficial:"Corte superficial de raíces",corte_profundo:"Corte profundo de raíces",trasplante:"Trasplante",tratamiento:"Tratamiento",plantacion:"Plantación",cierre_plantera:"Cierre de plantera",apertura_plantera:"Apertura de plantera",ampliacion_plantera:"Ampliación de plantera",reduccion_plantera:"Reducción de plantera",correr_plantera:"Correr plantera",banda:"Banda",tutorado:"Tutorado",seguimiento:"Seguimiento",vereda_elevada:"Vereda elevada"};return Object.entries(names).filter(([id])=>$(id)&&$(id).checked).map(([,v])=>v).join("; ");}
 function hashRecord(value){let h1=0x811c9dc5;for(let i=0;i<value.length;i++){h1^=value.charCodeAt(i);h1=Math.imul(h1,0x01000193);}return (h1>>>0).toString(16);}
 function sheetRecord(){const f=id=>$(id)?.value?.trim()||"";const r={aviso:f("aviso"),fecha:dateISO(f("fecha")),intervencion:interventionSummary(),especie:f("especie"),dap:f("dap"),altura:f("altura"),m2:f("superficie"),codigoBaldosa:f("codigo_baldosa"),riesgo:f("riesgo"),observacion:f("observaciones"),inspector:f("nombre"),treeId:f("identificacion")};r.submissionId=hashRecord(JSON.stringify(r));return r;}
