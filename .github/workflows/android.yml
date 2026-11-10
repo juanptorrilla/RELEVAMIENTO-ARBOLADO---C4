@@ -2,7 +2,7 @@ name: Generar APK Android
 on:
   workflow_dispatch:
   push:
-    branches: [ main, version-4 ]
+    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
