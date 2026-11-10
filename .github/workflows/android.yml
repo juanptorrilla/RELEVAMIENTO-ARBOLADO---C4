@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Descargar proyecto
         uses: actions/checkout@v4
@@ -32,7 +33,7 @@ jobs:
       - name: Crear proyecto Android
         run: npx cap add android
 
-      - name: Instalar función nativa de guardado en Descargas
+      - name: Instalar funciones nativas de Descargas y selección de fotos
         run: python scripts/install-native-plugin.py
 
       - name: Generar icono de Comuna 4
