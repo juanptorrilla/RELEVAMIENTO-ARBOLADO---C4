@@ -33,6 +33,7 @@ button.secondary{background:#e8efea;color:#244c39}
 .photo-list{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;max-width:360px}
 .photo-list img{width:100%;height:125px;object-fit:contain;background:#f7f9f7;border-radius:8px;border:1px solid var(--line)}
 .status{font-size:12px;color:#526258;margin-top:8px}
+.about-card{text-align:center;padding:12px 15px;margin-top:12px}.about-card h2{margin-bottom:8px}.about-copyright{font-size:12px;font-weight:650;color:#526258;margin:4px 0}.about-author{font-size:14px;font-weight:750;color:var(--green);margin:5px 0 2px}
 @media(max-width:540px){.grid,.checks{grid-template-columns:1fr}.initial-fields{grid-template-columns:1fr 1fr}.initial-fields .field:first-child{grid-column:1/-1}.photo-list{grid-template-columns:1fr}}
 </style>
 </head>
@@ -43,6 +44,12 @@ button.secondary{background:#e8efea;color:#244c39}
 <div class="field"><label for="inspectorSelect">Seleccionar inspector</label><select id="inspectorSelect"><option value="">Seleccioná un inspector...</option><option value="new">Nuevo inspector</option></select></div>
 <p class="note">Seleccioná tu nombre para completar automáticamente tus datos, o elegí «Nuevo inspector» para ingresar tus datos y firmar.</p>
 <div class="actions" style="margin-top:12px"><button id="enterForm" type="button" disabled>Ingresar a la planilla</button></div>
+</section>
+<section class="about-card" aria-label="Acerca de la aplicación">
+<h2>Acerca de</h2>
+<p class="about-copyright">© 2026 – Todos los derechos reservados.</p>
+<p class="about-author">Desarrollado por Juan Pablo Torrilla</p>
+<p class="note">Autor del desarrollo y diseño de la aplicación.</p>
 </section>
 <div id="formContent" hidden>
 <div class="actions" style="margin:10px 0 14px"><button id="backToInspectors" type="button" class="secondary">← Volver a selección de inspector</button></div>
