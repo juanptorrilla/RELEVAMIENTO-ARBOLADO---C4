@@ -6,29 +6,29 @@
 <title>Relevamiento Comuna 4</title>
 <style>
 :root{--green:#245c43;--bg:#f3f6f4;--line:#d9e2dc}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px system-ui,Arial;color:#1d2922}
-header{background:var(--green);color:white;padding:18px 16px;position:sticky;top:0;z-index:2}
-header h1{font-size:18px;margin:0 0 4px}header p{margin:0;font-size:12px;opacity:.9}
-main{max-width:850px;margin:auto;padding:14px}
-section{background:white;border:1px solid var(--line);border-radius:12px;padding:15px;margin:0 0 13px}
-h2{font-size:16px;color:var(--green);margin:0 0 12px}
-h3{font-size:14px;margin:14px 0 8px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.initial-fields{grid-template-columns:1.25fr .85fr 1fr}
-.field{display:flex;flex-direction:column;gap:4px;min-width:0}.field.full{grid-column:1/-1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:13px system-ui,Arial;color:#1d2922}
+header{background:var(--green);color:white;padding:13px 14px;position:sticky;top:0;z-index:2}
+header h1{font-size:16px;margin:0 0 3px}header p{margin:0;font-size:12px;opacity:.9}
+main{max-width:850px;margin:auto;padding:10px}
+section{background:white;border:1px solid var(--line);border-radius:10px;padding:11px;margin:0 0 9px}
+h2{font-size:14px;color:var(--green);margin:0 0 8px}
+h3{font-size:12px;margin:9px 0 5px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.initial-fields{grid-template-columns:1.25fr .85fr 1fr}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}.field.full{grid-column:1/-1}
 #arme{max-width:150px}
-.photo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.photo-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .photo-list{grid-template-columns:repeat(2,minmax(0,1fr));max-width:420px}
 @media(max-width:540px){.photo-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 label,.legend{font-size:12px;font-weight:650;color:#526258}
-input,select,textarea{width:100%;border:1px solid #cbd6ce;border-radius:8px;padding:10px;font:inherit;background:#fff}
-textarea{min-height:84px;resize:vertical}
-.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.check{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:400;color:#27352c}
+input,select,textarea{width:100%;border:1px solid #cbd6ce;border-radius:8px;padding:8px;font:inherit;background:#fff}
+textarea{min-height:66px;resize:vertical}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.check{display:flex;align-items:flex-start;gap:6px;font-size:12px;font-weight:400;color:#27352c}
 .check input{width:18px;height:18px;margin:0;flex:none;accent-color:var(--green)}
-.note{font-size:12px;color:#64736a;margin:7px 0 0}
-button,.filelabel{border:0;border-radius:9px;background:var(--green);color:white;padding:12px 15px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;justify-content:center;align-items:center}
+.note{font-size:11px;color:#64736a;margin:5px 0 0}
+button,.filelabel{border:0;border-radius:9px;background:var(--green);color:white;padding:9px 12px;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;justify-content:center;align-items:center}
 button.secondary{background:#e8efea;color:#244c39}
-.actions{display:flex;gap:9px;flex-wrap:wrap}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
 #signature{width:100%;height:150px;border:1px dashed #8da596;border-radius:8px;touch-action:none;background:#fff}#signature.signature-locked{background:#f4f6f4;border-style:solid;opacity:.82}#entryScreen{max-width:560px;margin:12vh auto 0}#entryScreen select{min-height:46px} [hidden]{display:none!important}
 .photo-list{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;max-width:360px}
 .photo-list img{width:100%;height:125px;object-fit:contain;background:#f7f9f7;border-radius:8px;border:1px solid var(--line)}
@@ -190,14 +190,34 @@ button.secondary{background:#e8efea;color:#244c39}
 </section>
 <section id="historySection"><h2>Guardado e historial</h2>
 <p class="note">Los relevamientos se guardan automáticamente en este dispositivo. Podés recuperar uno anterior o eliminarlo.</p>
-<div class="actions" style="margin:8px 0"><button id="saveRecord" type="button" class="secondary">Guardar relevamiento</button></div>
+<div class="actions" style="margin:7px 0"><button id="saveRecord" type="button" class="secondary">Guardar relevamiento</button><button id="recoverDrive" type="button" class="secondary">Recuperar desde Drive</button></div>
 <div id="historyList" class="status">Todavía no hay relevamientos guardados.</div></section>
 <section><div class="actions">
 <button id="generate" type="button">Generar PDF completo</button>
-<button id="openPdf" type="button" class="secondary" disabled>Ver último PDF</button><button id="sharePdf" type="button" class="secondary">Enviar PDF a Drive</button><button id="sendSheet" type="button" class="secondary">Enviar datos a planilla</button>
+<button id="openPdf" type="button" class="secondary" disabled>Ver último PDF</button><button id="sharePdf" type="button" class="secondary">Enviar PDF a Drive</button><button id="sendSheet" type="button" class="secondary">Enviar datos a planilla</button><button id="openDeny" type="button" class="secondary">Denegar reclamo</button>
 <button id="reset" type="button" class="secondary">Limpiar formulario</button>
 </div><p class="status" id="status">El relevamiento se guarda en este dispositivo. Los envíos a Drive y a la planilla son acciones voluntarias y requieren conexión a internet.</p></section>
 </div>
+<section id="denyScreen" hidden>
+<h2>Denegar reclamo</h2>
+<p class="note">El motivo y el complemento se incluirán en el correo al vecino. Las observaciones internas del relevamiento no se envían.</p>
+<div class="field"><label for="denyReason">Motivo de denegación</label><select id="denyReason">
+<option value="">Seleccioná un motivo...</option>
+<option>No corresponde extracción.</option>
+<option>Denegado.</option>
+<option>Árbol en buenas condiciones fitosanitarias.</option>
+<option>No hay árbol en la dirección indicada.</option>
+<option>No se observa levantamiento de vereda.</option>
+<option>No se encontró plantera.</option>
+<option>No hay chapa catastral.</option>
+<option>No requiere poda.</option>
+<option>No requiere intervención de arbolado.</option>
+<option>Se sugiere reiterar el reclamo entre mayo y septiembre, período correspondiente a este tipo de poda.</option>
+</select></div>
+<div class="field" style="margin-top:8px"><label for="denyExtra">Complemento para el vecino (máximo 200 caracteres)</label><textarea id="denyExtra" maxlength="200" rows="3"></textarea><p class="note"><span id="denyCount">0</span>/200 caracteres</p></div>
+<div class="actions" style="margin-top:10px"><button id="sendDeny" type="button">Enviar denegación</button><button id="cancelDeny" type="button" class="secondary">Volver al relevamiento</button></div>
+<p class="status" id="denyStatus"></p>
+</section>
 </main>
 <script src="./pdf-lib.min.js"></script>
 <script>
@@ -430,6 +450,22 @@ $("openPdf").addEventListener("click",async()=>{try{const downloads=window.Capac
 const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbyXus7qgt5v8XZF2rmmMIcVKZpBEs4abA6yL7RDNU90UbnudUxhQJrzKJeIYz4cRGLj/exec";
 async function getEndpoint(){return APPS_SCRIPT_URL;}
 async function postAppsScript(payload){const url=await getEndpoint();if(!url)throw new Error("No se configuró la URL de Apps Script.");const http=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.CapacitorHttp;if(http&&http.post){const r=await http.post({url,headers:{"Content-Type":"application/json"},data:payload,connectTimeout:30000,readTimeout:60000});return typeof r.data==="string"?JSON.parse(r.data):r.data;}const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});return await r.json();}
+const APP_TOKEN="C4-ARBOLADO-2026-PLANILLA-4";
+$("recoverDrive").addEventListener("click",async()=>{
+ const btn=$("recoverDrive");try{if(!navigator.onLine)throw new Error("Necesitás conexión a internet para recuperar desde Drive.");btn.disabled=true;$("status").textContent="Buscando relevamientos guardados en Google Drive...";
+ const result=await postAppsScript({action:"listActas",token:APP_TOKEN});if(!result||result.ok!==true)throw new Error(result&&result.error||"No se pudo consultar Drive.");
+ const items=result.items||[];if(!items.length){$("status").textContent="No se encontraron relevamientos guardados en Drive.";return;}
+ const menu=items.map((x,i)=>(i+1)+". "+x.fileName+" · "+(x.savedAt?new Date(x.savedAt).toLocaleString("es-AR"):"fecha no disponible")).join("\n");
+ const choice=prompt("Elegí el número del relevamiento que querés recuperar:\n\n"+menu);if(choice===null)return;const index=Number(choice)-1;if(!Number.isInteger(index)||index<0||index>=items.length)throw new Error("La selección no es válida.");
+ const got=await postAppsScript({action:"getActa",token:APP_TOKEN,fileId:items[index].fileId});if(!got||got.ok!==true||!got.snapshot)throw new Error(got&&got.error||"El archivo no contiene datos recuperables.");
+ await restoreSnapshot(got.snapshot);await saveRecord();$("status").textContent="Relevamiento recuperado desde Drive: "+items[index].fileName;window.scrollTo({top:0,behavior:"smooth"});
+ }catch(e){console.error(e);$("status").textContent="No se pudo recuperar desde Drive: "+e.message;}finally{btn.disabled=false;}
+});
+$("openDeny").addEventListener("click",()=>{if(!$("aviso").value.trim()){ $("status").textContent="Completá el número de reclamo (AVISO) antes de denegar.";return;}$("formContent").hidden=true;$("denyScreen").hidden=false;$("denyStatus").textContent="";window.scrollTo(0,0);});
+$("cancelDeny").addEventListener("click",()=>{$("denyScreen").hidden=true;$("formContent").hidden=false;window.scrollTo(0,0);});
+$("denyExtra").addEventListener("input",()=>$("denyCount").textContent=String($("denyExtra").value.length));
+$("sendDeny").addEventListener("click",async()=>{const reason=$("denyReason").value.trim();if(!reason){$("denyStatus").textContent="Seleccioná un motivo de denegación.";return;}if(!navigator.onLine){$("denyStatus").textContent="Necesitás conexión a internet para enviar la notificación.";return;}const btn=$("sendDeny");try{btn.disabled=true;$("denyStatus").textContent="Enviando la notificación al vecino...";const result=await postAppsScript({action:"denyClaim",token:APP_TOKEN,aviso:$("aviso").value.trim(),reason,extra:$("denyExtra").value.trim()});if(!result||result.ok!==true)throw new Error(result&&result.error||"El servidor no confirmó el envío.");$("denyStatus").textContent=result.message||"Notificación enviada.";}catch(e){console.error(e);$("denyStatus").textContent="No se pudo enviar la denegación: "+e.message;}finally{btn.disabled=false;}});
+
 $("sharePdf").addEventListener("click",async()=>{try{
  if(!navigator.onLine){$("status").textContent="No hay conexión a internet. Usá “Generar PDF completo” para guardar una copia en Descargas y enviarla a Drive cuando vuelva la conexión.";return;}
  $("sharePdf").disabled=true;
@@ -437,7 +473,7 @@ $("sharePdf").addEventListener("click",async()=>{try{
  if(!pdf)throw new Error("No se pudo preparar el PDF.");
  $("status").textContent="Enviando PDF a Google Drive...";
  const data=bytesToBase64(pdf.bytes);
- const result=await postAppsScript({action:"savePdf",token:"C4-ARBOLADO-2026-PLANILLA-4",fileName:pdf.fileName,mimeType:"application/pdf",data});
+ const result=await postAppsScript({action:"savePdf",token:"C4-ARBOLADO-2026-PLANILLA-4",fileName:pdf.fileName,mimeType:"application/pdf",data,snapshot:appState.draft});
  if(!result||result.ok!==true)throw new Error(result&&result.error||"El servidor no confirmó el guardado.");
  $("status").textContent="PDF enviado correctamente a Google Drive: "+pdf.fileName+". No se guardó una copia en Descargas.";
  }catch(e){console.error(e);$("status").textContent="No se pudo enviar el PDF a Drive: "+e.message;}
@@ -445,7 +481,7 @@ $("sharePdf").addEventListener("click",async()=>{try{
 });
 function interventionSummary(){const names={obj_riesgo:"Reducción de riesgo",obj_interferencias:"Eliminar interferencias",obj_sitio:"Adecuación al sitio",obj_regulacion:"Estructura",p_formacion:"Poda de formación",p_limpieza:"Poda de limpieza",p_aclareo:"Poda de aclareo",p_refaldado:"Refaldado",p_terciado:"Terciado",p_balanceo:"Balanceo",extr_vereda:"Extracción con vereda",extr_svereda:"Extracción sin vereda",extr_cierre_plantera:"Extracción con cierre de plantera",corte_superficial:"Corte superficial de raíces",corte_profundo:"Corte profundo de raíces",trasplante:"Trasplante",tratamiento:"Tratamiento",plantacion:"Plantación",cierre_plantera:"Cierre de plantera",apertura_plantera:"Apertura de plantera",ampliacion_plantera:"Ampliación de plantera",reduccion_plantera:"Reducción de plantera",correr_plantera:"Correr plantera",banda:"Banda",tutorado:"Tutorado",seguimiento:"Seguimiento",vereda_elevada:"Vereda elevada"};return Object.entries(names).filter(([id])=>$(id)&&$(id).checked).map(([,v])=>v).join("; ");}
 function hashRecord(value){let h1=0x811c9dc5;for(let i=0;i<value.length;i++){h1^=value.charCodeAt(i);h1=Math.imul(h1,0x01000193);}return (h1>>>0).toString(16);}
-function sheetRecord(){const f=id=>$(id)?.value?.trim()||"";const r={aviso:f("aviso"),fecha:dateISO(f("fecha")),intervencion:interventionSummary(),especie:f("especie"),dap:f("dap"),altura:f("altura"),m2:f("superficie"),codigoBaldosa:f("codigo_baldosa"),riesgo:f("riesgo"),observacion:f("observaciones"),inspector:f("nombre"),treeId:f("identificacion")};r.submissionId=hashRecord(JSON.stringify(r));return r;}
+function sheetRecord(){const f=id=>$(id)?.value?.trim()||"";const r={aviso:f("aviso"),numero:f("numero"),fecha:dateISO(f("fecha")),intervencion:interventionSummary(),especie:f("especie"),dap:f("dap"),altura:f("altura"),m2:f("superficie"),codigoBaldosa:f("codigo_baldosa"),riesgo:f("riesgo"),observacion:f("observaciones"),inspector:f("nombre"),treeId:f("identificacion")};r.submissionId=hashRecord(JSON.stringify(r));return r;}
 async function flushPending(){const pending=JSON.parse(localStorage.getItem("c4_pending_sheet")||"[]");if(!pending.length)return 0;const remaining=[];let sent=0;for(const record of pending){try{const result=await postAppsScript({action:"saveTree",token:"C4-ARBOLADO-2026-PLANILLA-4",record});if(!result||result.ok!==true)throw new Error(result&&result.error||"Error");sent++;}catch(e){remaining.push(record);}}localStorage.setItem("c4_pending_sheet",JSON.stringify(remaining));return sent;}
 $("sendSheet").addEventListener("click",async()=>{try{const record=sheetRecord();if(!record.aviso){$("status").textContent="Completá el número de reclamo (AVISO) antes de enviar.";return;}if(!record.fecha){$("status").textContent="Revisá la fecha: debe tener el formato DD/MM/AAAA.";return;}if(!navigator.onLine){const pending=JSON.parse(localStorage.getItem("c4_pending_sheet")||"[]");pending.push(record);localStorage.setItem("c4_pending_sheet",JSON.stringify(pending));$("status").textContent="Sin conexión. Los datos quedaron guardados en este celular para enviarlos más tarde.";return;}$("sendSheet").disabled=true;const pendingSent=await flushPending();$("status").textContent="Buscando el reclamo por su número en la columna A...";const result=await postAppsScript({action:"saveTree",token:"C4-ARBOLADO-2026-PLANILLA-4",record});if(!result||result.ok!==true)throw new Error(result&&result.error||"No se pudo confirmar el envío.");$("status").textContent=(result.message||"Datos enviados a la planilla.")+(pendingSent?" También se enviaron "+pendingSent+" registro(s) que estaban pendientes.":"");}catch(e){console.error(e);$("status").textContent="No se pudieron enviar los datos: "+e.message;}finally{$("sendSheet").disabled=false;}});
 window.addEventListener("online",async()=>{try{const sent=await flushPending();if(sent)$("status").textContent="Se enviaron "+sent+" registro(s) pendientes a la planilla.";}catch(e){console.warn("No se pudieron reenviar registros pendientes",e);}});

@@ -1,24 +1,59 @@
-// Relevamiento Comuna 4 — backend para Google Sheets y Google Drive
+// Relevamiento Comuna 4 — backend V7 ampliado
+// Mantiene la escritura de datos del árbol en I:R y limita la actualización de altura a la columna C.
 const TOKEN = 'C4-ARBOLADO-2026-PLANILLA-4';
 const SPREADSHEET_ID = '1l_58opct0coaz2suIsez7UDtB5Wa1RiF';
 const SHEET_GID = 1068617970;
+const BASE_GENERAL_ID = '1DxbjbjFwOvhhBYI6i7_CjlrepAOxU7cSvr2BCMn_s_w';
+const BASE_GENERAL_SHEET = 'BASE_RECLAMOS';
+
 function doPost(e) {
   try {
     const p = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     if (p.token !== TOKEN) return json_({ok:false,error:'Token de acceso inválido.'});
     if (p.action === 'savePdf') return json_(savePdf_(p));
+    if (p.action === 'listActas') return json_(listActas_());
+    if (p.action === 'getActa') return json_(getActa_(p));
     if (p.action === 'saveTree') return json_(saveTree_(p.record || {}));
+    if (p.action === 'denyClaim') return json_(denyClaim_(p));
     return json_({ok:false,error:'Acción no reconocida.'});
   } catch (err) { return json_({ok:false,error:String(err && err.message || err)}); }
 }
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+
 function savePdf_(p) {
   if (!p.data || !p.fileName) throw new Error('Faltan datos del PDF o nombre del archivo.');
   const bytes = Utilities.base64Decode(p.data);
   const blob = Utilities.newBlob(bytes, p.mimeType || 'application/pdf', p.fileName);
-  const file = DriveApp.createFile(blob);
-  return {ok:true,message:'PDF guardado en Google Drive.',fileId:file.getId(),fileName:file.getName()};
+  const pdf = DriveApp.createFile(blob);
+  const savedAt = new Date().toISOString();
+  const sidecar = {app:'Relevamiento Comuna 4',pdfFileId:pdf.getId(),fileName:pdf.getName(),savedAt:savedAt,snapshot:p.snapshot || null};
+  const record = DriveApp.createFile(p.fileName + '.acta.json', JSON.stringify(sidecar), MimeType.PLAIN_TEXT);
+  return {ok:true,message:'PDF y datos de recuperación guardados en Google Drive.',fileId:pdf.getId(),recordId:record.getId(),fileName:pdf.getName()};
 }
+function listActas_() {
+  const files = DriveApp.getFiles();
+  const items = [];
+  while (files.hasNext() && items.length < 100) {
+    const f = files.next();
+    if (!f.getName().endsWith('.acta.json') || f.isTrashed()) continue;
+    try {
+      const data = JSON.parse(f.getBlob().getDataAsString());
+      if (data && data.app === 'Relevamiento Comuna 4' && data.snapshot) {
+        items.push({fileId:f.getId(),fileName:data.fileName || f.getName().replace(/\.acta\.json$/,''),savedAt:data.savedAt || ''});
+      }
+    } catch (_) {}
+  }
+  items.sort((a,b)=>String(b.savedAt).localeCompare(String(a.savedAt)));
+  return {ok:true,items:items};
+}
+function getActa_(p) {
+  if (!p.fileId) throw new Error('Falta identificar el relevamiento de Drive.');
+  const file = DriveApp.getFileById(p.fileId);
+  const data = JSON.parse(file.getBlob().getDataAsString());
+  if (!data || data.app !== 'Relevamiento Comuna 4' || !data.snapshot) throw new Error('El archivo no contiene datos recuperables de la aplicación.');
+  return {ok:true,snapshot:data.snapshot,fileName:data.fileName || ''};
+}
+
 function saveTree_(r) {
   const aviso = String(r.aviso || '').trim();
   const submissionId = String(r.submissionId || '').trim();
@@ -32,11 +67,22 @@ function saveTree_(r) {
   if (!sh) throw new Error('No se encontró la hoja configurada. No se modificó la planilla.');
   const last = sh.getLastRow();
   if (last < 2) throw new Error('La planilla no contiene números de reclamo.');
-  // Búsqueda EXCLUSIVA por número de reclamo en columna A. No usar calle ni altura.
+  // Búsqueda EXCLUSIVA por AVISO en columna A; nunca por calle o altura.
   const avisos = sh.getRange(2,1,last-1,1).getDisplayValues().flat().map(v => String(v).trim());
   const rows = [];
   avisos.forEach((v,i) => { if (v === aviso) rows.push(i+2); });
   if (!rows.length) throw new Error('No se encontró el reclamo ' + aviso + ' en la columna A. No se escribió en ninguna fila.');
+
+  // Si el inspector modificó N.º/altura, se actualiza exclusivamente la columna C.
+  const numero = String(r.numero || '').trim();
+  let heightUpdated = false;
+  if (numero) {
+    rows.forEach(row => {
+      const current = String(sh.getRange(row,3).getDisplayValue() || '').trim();
+      if (current !== numero) { sh.getRange(row,3).setValue(numero); heightUpdated = true; }
+    });
+  }
+
   const values = [[r.fecha || '',r.intervencion || '',r.especie || '',r.dap || '',r.altura || '',r.m2 || '',r.codigoBaldosa || '',r.riesgo || '',r.observacion || '',r.inspector || '']];
   // Primera fila del mismo reclamo sin datos I:R; si ya hay árbol registrado, crear fila hermana.
   let target = rows.find(row => sh.getRange(row,9,1,10).getDisplayValues()[0].every(v => String(v).trim()===''));
@@ -44,10 +90,40 @@ function saveTree_(r) {
     target = sh.getLastRow()+1;
     const source = rows[0];
     sh.getRange(source,1,1,24).copyTo(sh.getRange(target,1,1,24), {contentsOnly:false});
-    // Se conservan A:H y S:X de la fila de reclamo; no se alteran las fórmulas/controles.
   }
   sh.getRange(target,9,1,10).setValues(values);
   SpreadsheetApp.flush();
   props.setProperty(sentKey, new Date().toISOString());
-  return {ok:true,message:'Datos del árbol asociados al reclamo ' + aviso + ' (fila ' + target + ').',row:target};
+  return {ok:true,message:'Datos del árbol asociados al reclamo ' + aviso + ' (fila ' + target + ').' + (heightUpdated ? ' Se actualizó únicamente la columna C con la nueva altura.' : ''),row:target,heightUpdated:heightUpdated};
+}
+
+function denyClaim_(p) {
+  const aviso = String(p.aviso || '').trim();
+  const reason = String(p.reason || '').trim();
+  const extra = String(p.extra || '').trim().slice(0,200);
+  if (!aviso || !reason) throw new Error('Falta el número de reclamo o el motivo de denegación.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ss = SpreadsheetApp.openById(BASE_GENERAL_ID);
+    const sh = ss.getSheetByName(BASE_GENERAL_SHEET);
+    if (!sh) throw new Error('No se encontró la hoja BASE_RECLAMOS de la base general.');
+    const last = sh.getLastRow();
+    const avisos = sh.getRange(1,1,last,1).getDisplayValues().flat().map(v=>String(v).trim());
+    const index = avisos.findIndex(v=>v===aviso);
+    if (index < 0) throw new Error('No se encontró el reclamo ' + aviso + ' en la BASE GENERAL.');
+    const row = index + 1;
+    const email = String(sh.getRange(row,7).getDisplayValue() || '').trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('El reclamo no tiene una dirección de correo válida en la columna G.');
+    const prior = String(sh.getRange(row,13).getDisplayValue() || '').toUpperCase();
+    if (prior.indexOf('DENEGACIÓN ENVIADA') >= 0 || prior.indexOf('DENEGACION ENVIADA') >= 0) return {ok:true,message:'La notificación de denegación ya figura enviada. No se volvió a enviar.'};
+    const subject = 'Respuesta a su reclamo de arbolado — ' + aviso;
+    const body = 'Estimado/a vecino/a:\n\nEn relación con el reclamo ' + aviso + ', le informamos que no corresponde realizar la intervención solicitada por el siguiente motivo:\n\n' + reason + (extra ? '\n\n' + extra : '') + '\n\nSaludos cordiales,\nÁrea de Arbolado\nComuna 4';
+    MailApp.sendEmail({to:email,subject:subject,body:body,name:'Arbolado Comuna 4'});
+    sh.getRange(row,11).setValue('DENEGADO');
+    sh.getRange(row,13).setValue('DENEGACIÓN ENVIADA');
+    sh.getRange(row,14).setValue(new Date());
+    SpreadsheetApp.flush();
+    return {ok:true,message:'Correo de denegación enviado y notificación registrada en la BASE GENERAL.'};
+  } finally { lock.releaseLock(); }
 }
