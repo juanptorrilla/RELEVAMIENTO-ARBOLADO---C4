@@ -380,6 +380,9 @@ async function createPdf(saveLocal){
   putText(p1,$("superficie").value,165+8,759,s1,4.8*0.86);putText(p1,$("codigo_baldosa").value,165+8,771,s1,4.8*0.86);putText(p1,$("pluvial").value,165+8,783,s1,4.8*0.86);putText(p1,$("cordon").value,165+8,794,s1,4.8*0.86);putText(p1,$("k").value,165+8,805,s1,4.8*0.86);putText(p1,$("sup_total").value,165+8,816,s1,4.8*0.86);
   t("prioridad",573,838,7);t("riesgo",573,851,7);
   t("nombre",96,892,7);t("dni",543,892,7);
+  // Incorporar en la plantilla PDF el recuadro y la leyenda de la nueva opción "Reducción".
+  p1.drawRectangle({x:235*s1,y:topY(p1.getHeight(),641,s1),width:29*s1,height:11*s1,borderColor:PDFLib.rgb(0,0,0),borderWidth:0.5*s1,color:PDFLib.rgb(1,1,1)});
+  putText(p1,"Reducción",264,637,s1,4.2);
   // Reemplazar el texto preimpreso "Regulación de" por "Estructura" sin alterar el resto de la planilla.
   p1.drawRectangle({x:118*s1,y:topY(p1.getHeight(),596,s1),width:66*s1,height:11*s1,color:PDFLib.rgb(1,1,1)});
   putText(p1,"Estructura",118,591,s1,4.2);
