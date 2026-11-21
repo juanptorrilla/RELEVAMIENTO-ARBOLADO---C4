@@ -382,8 +382,8 @@ async function createPdf(saveLocal){
   t("nombre",96,892,7);t("dni",543,892,7);
   // Única casilla de "Reducción", inmediatamente debajo de Balanceo.
   // Se dibuja una sola vez y se alinea con las dimensiones de las casillas de la columna B.
-  p1.drawRectangle({x:235*s1,y:topY(p1.getHeight(),641,s1),width:29*s1,height:11*s1,borderColor:PDFLib.rgb(0,0,0),borderWidth:0.5*s1,color:PDFLib.rgb(1,1,1)});
-  putText(p1,"Reducción",264,637,s1,4.2);
+  p1.drawRectangle({x:235*s1,y:topY(p1.getHeight(),635,s1),width:29*s1,height:13*s1,borderColor:PDFLib.rgb(0,0,0),borderWidth:0.5*s1,color:PDFLib.rgb(1,1,1)});
+  putText(p1,"Reducción",264,633,s1,4.2);
   // Reemplazar el texto preimpreso "Regulación de" por "Estructura" sin alterar el resto de la planilla.
   p1.drawRectangle({x:118*s1,y:topY(p1.getHeight(),596,s1),width:66*s1,height:11*s1,color:PDFLib.rgb(1,1,1)});
   putText(p1,"Estructura",118,591,s1,4.2);
