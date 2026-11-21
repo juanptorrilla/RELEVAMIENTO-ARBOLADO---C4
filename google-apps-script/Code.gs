@@ -73,13 +73,19 @@ function saveTree_(r) {
   avisos.forEach((v,i) => { if (v === aviso) rows.push(i+2); });
   if (!rows.length) throw new Error('No se encontró el reclamo ' + aviso + ' en la columna A. No se escribió en ninguna fila.');
 
-  // Si el inspector modificó N.º/altura, se actualiza exclusivamente la columna C.
-  const numero = String(r.numero || '').trim();
+  // El campo N.º se copia literalmente a la columna C (puede contener números,
+  // letras, barras, guiones u otros caracteres). AVISO es la única clave de búsqueda.
+  const numero = String(r.numero == null ? '' : r.numero);
   let heightUpdated = false;
-  if (numero) {
+  if (numero.trim() !== '') {
     rows.forEach(row => {
-      const current = String(sh.getRange(row,3).getDisplayValue() || '').trim();
-      if (current !== numero) { sh.getRange(row,3).setValue(numero); heightUpdated = true; }
+      const cell = sh.getRange(row,3);
+      const current = String(cell.getDisplayValue() == null ? '' : cell.getDisplayValue());
+      if (current !== numero) {
+        cell.setNumberFormat('@');
+        cell.setValue(numero);
+        heightUpdated = true;
+      }
     });
   }
 
