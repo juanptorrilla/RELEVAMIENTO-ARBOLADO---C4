@@ -356,6 +356,10 @@ async function createPdf(saveLocal){
   const bytes=Uint8Array.from(atob(PDF_B64),c=>c.charCodeAt(0));
   const doc=await PDFLib.PDFDocument.load(bytes);font=await doc.embedFont(PDFLib.StandardFonts.Helvetica);
   const p1=doc.getPages()[0],p2=doc.getPages()[1],s1=p1.getWidth()/1320,s2=p2.getWidth()/1320;
+  // Agregar en la plantilla PDF la casilla y la leyenda de Reducción,
+  // inmediatamente debajo de Balanceo, en la columna B: Tipos de poda.
+  p1.drawRectangle({x:235*s1,y:topY(p1.getHeight(),641,s1),width:28*s1,height:11*s1,borderColor:PDFLib.rgb(0,0,0),borderWidth:0.55*s1,color:PDFLib.rgb(1,1,1)});
+  p1.drawText("Reducción",{x:264*s1,y:topY(p1.getHeight(),638,s1),size:5.2*s1,font,color:PDFLib.rgb(0,0,0)});
   const t=(id,x,y,size=8)=>putText(p1,$(id).value,x+8,y,s1,size*0.86);
   // Reorganizar el renglón superior para incorporar AVISO | ID | ARME.
   // Se cubre únicamente ese renglón y se vuelven a dibujar rótulos y líneas.
