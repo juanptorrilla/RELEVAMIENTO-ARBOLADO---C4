@@ -73,22 +73,6 @@ function saveTree_(r) {
   avisos.forEach((v,i) => { if (v === aviso) rows.push(i+2); });
   if (!rows.length) throw new Error('No se encontró el reclamo ' + aviso + ' en la columna A. No se escribió en ninguna fila.');
 
-  // El campo N.º se copia literalmente a la columna C (puede contener números,
-  // letras, barras, guiones u otros caracteres). AVISO es la única clave de búsqueda.
-  const numero = String(r.numero == null ? '' : r.numero);
-  let heightUpdated = false;
-  if (numero.trim() !== '') {
-    rows.forEach(row => {
-      const cell = sh.getRange(row,3);
-      const current = String(cell.getDisplayValue() == null ? '' : cell.getDisplayValue());
-      if (current !== numero) {
-        cell.setNumberFormat('@');
-        cell.setValue(numero);
-        heightUpdated = true;
-      }
-    });
-  }
-
   const values = [[r.fecha || '',r.intervencion || '',r.especie || '',r.dap || '',r.altura || '',r.m2 || '',r.codigoBaldosa || '',r.riesgo || '',r.observacion || '',r.inspector || '']];
   // Primera fila del mismo reclamo sin datos I:R; si ya hay árbol registrado, crear fila hermana.
   let target = rows.find(row => sh.getRange(row,9,1,10).getDisplayValues()[0].every(v => String(v).trim()===''));
@@ -97,10 +81,26 @@ function saveTree_(r) {
     const source = rows[0];
     sh.getRange(source,1,1,24).copyTo(sh.getRange(target,1,1,24), {contentsOnly:false});
   }
+
+  // Aplicación: N° (propiedad numero o clave literal "N°") -> planilla: columna C, CHAPA CATASTRAL.
+  // Se escribe solo en la fila de este árbol para no sobrescribir la chapa de otro árbol del mismo AVISO.
+  const numeroRaw = r.numero != null ? r.numero : r['N°'];
+  const numero = numeroRaw == null ? '' : String(numeroRaw);
+  let chapaActualizada = false;
+  if (numero.trim() !== '') {
+    const cell = sh.getRange(target,3);
+    const current = String(cell.getDisplayValue() == null ? '' : cell.getDisplayValue());
+    if (current !== numero) {
+      cell.setNumberFormat('@');
+      cell.setValue(numero);
+      chapaActualizada = true;
+    }
+  }
+
   sh.getRange(target,9,1,10).setValues(values);
   SpreadsheetApp.flush();
   props.setProperty(sentKey, new Date().toISOString());
-  return {ok:true,message:'Datos del árbol asociados al reclamo ' + aviso + ' (fila ' + target + ').' + (heightUpdated ? ' Se actualizó únicamente la columna C con la nueva altura.' : ''),row:target,heightUpdated:heightUpdated};
+  return {ok:true,message:'Datos del árbol asociados al reclamo ' + aviso + ' (fila ' + target + ').' + (chapaActualizada ? ' Se actualizó la CHAPA CATASTRAL (columna C) con el campo N° de la aplicación.' : ''),row:target,chapaActualizada:chapaActualizada};
 }
 
 function denyClaim_(p) {
