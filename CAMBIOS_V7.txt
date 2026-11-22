@@ -32,3 +32,16 @@ En GitHub: Actions > Generar APK Android > Run workflow; seleccionar la rama aut
 
 ESTADO DE VERIFICACIÓN
 Se revisa la sintaxis JavaScript del formulario y del backend y la configuración JSON. La conexión real con Google, el envío de correo, la recuperación desde Drive y la compilación APK deben confirmarse después del despliegue y desde un teléfono. No se afirma que esas pruebas remotas ya se hayan ejecutado.
+
+
+CORRECCIÓN — RECUPERACIÓN Y ACTUALIZACIÓN DE FILA (21/11/2026)
+- La aplicación ya envía el campo ID como treeId al backend (campo identificacion).
+- El backend busca primero el AVISO en columna A y luego el ID del árbol en columna B.
+- Si encuentra AVISO + ID, actualiza I:R en esa misma fila aunque ya esté completa.
+- Si el ID no existe para ese AVISO, se considera un árbol adicional: reutiliza una fila hermana vacía o crea una nueva.
+- Al guardar, persiste el ID del árbol en columna B para mantener la asociación en futuras recuperaciones.
+- Se utiliza bloqueo de script para evitar que dos envíos simultáneos creen filas duplicadas.
+- Para impedir duplicaciones ambiguas, el backend exige completar el campo ID.
+- La rama de trabajo es fix/actualizar-fila-arbol-recuperado; autoria-v7 y main permanecen intactas.
+- El GID del backend queda alineado con el valor 1419998981 informado para el proyecto actual.
+- El cambio está guardado en GitHub, pero requiere actualizar el proyecto Apps Script y desplegar una nueva versión para que la app en uso lo ejecute.
