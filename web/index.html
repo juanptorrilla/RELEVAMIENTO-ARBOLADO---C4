@@ -374,7 +374,8 @@ async function createPdf(saveLocal){
   t("calle",117,211,8);t("numero",383,211,8);t("especie",326,187,8);
   putText(p1,$("altura").value,170,251,s1,6*0.86);putText(p1,$("dap").value,325,251,s1,6*0.86);
   putText(p1,$("cav_long").value,538,350,s1,6*0.86);putText(p1,$("pared").value,538,365,s1,6*0.86);
-  t("enfermeda  // Observaciones: adaptar el tamaño de letra para que el texto completo
+  t("enfermedades",500,496,7);
+  // Observaciones: adaptar el tamaño de letra para que el texto completo
   // entre en cinco renglones, sin truncarlo ni invadir otros campos.
   const obs=$("observaciones").value.slice(0,1000);
   if(obs){
