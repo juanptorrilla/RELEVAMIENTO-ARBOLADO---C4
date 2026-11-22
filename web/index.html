@@ -375,8 +375,50 @@ async function createPdf(saveLocal){
   putText(p1,$("altura").value,170,251,s1,6*0.86);putText(p1,$("dap").value,325,251,s1,6*0.86);
   putText(p1,$("cav_long").value,538,350,s1,6*0.86);putText(p1,$("pared").value,538,365,s1,6*0.86);
   t("enfermedades",500,496,7);
+  // Observaciones: ajustar el texto al ancho de los renglones del acta
+  // y limitarlo al espacio disponible, sin invadir los campos inferiores.
   const obs=$("observaciones").value;
-  if(obs){const lines=obs.match(/.{1,100}(?:\s|$)/g)||[obs];lines.slice(0,5).forEach((line,i)=>putText(p1,line.trim(),100,707+i*22,s1,6.0));}
+  if(obs){
+    const maxObsWidth=550*s1;
+    const maxObsLines=5;
+    let obsFontSize=6.0;
+    const wrapObservations=(value,size)=>{
+      const result=[];
+      const paragraphs=String(value).replace(/\\r/g,"").split("\\n");
+      paragraphs.forEach(paragraph=>{
+        const words=paragraph.trim().split(/\\s+/).filter(Boolean);
+        if(!words.length){if(paragraph==="")result.push("");return;}
+        let current="";
+        words.forEach(word=>{
+          const candidate=current?current+" "+word:word;
+          if(font.widthOfTextAtSize(candidate,size)<=maxObsWidth){
+            current=candidate;
+          }else{
+            if(current)result.push(current);
+            current=word;
+          }
+        });
+        if(current)result.push(current);
+      });
+      return result;
+    };
+    let obsLines=wrapObservations(obs,obsFontSize);
+    while(obsLines.length>maxObsLines && obsFontSize>4.5){
+      obsFontSize=Math.max(4.5,obsFontSize-0.25);
+      obsLines=wrapObservations(obs,obsFontSize);
+    }
+    if(obsLines.length>maxObsLines){
+      obsLines=obsLines.slice(0,maxObsLines);
+      let lastLine=obsLines[maxObsLines-1];
+      while(lastLine && font.widthOfTextAtSize(lastLine+"...",obsFontSize)>maxObsWidth){
+        lastLine=lastLine.slice(0,-1).trimEnd();
+      }
+      obsLines[maxObsLines-1]=lastLine+"...";
+    }
+    obsLines.slice(0,maxObsLines).forEach((line,i)=>{
+      if(line)putText(p1,line,100,707+i*11,s1,obsFontSize);
+    });
+  }
   putText(p1,$("superficie").value,165+8,759,s1,4.8*0.86);putText(p1,$("codigo_baldosa").value,165+8,771,s1,4.8*0.86);putText(p1,$("pluvial").value,165+8,783,s1,4.8*0.86);putText(p1,$("cordon").value,165+8,794,s1,4.8*0.86);putText(p1,$("k").value,165+8,805,s1,4.8*0.86);putText(p1,$("sup_total").value,165+8,816,s1,4.8*0.86);
   t("prioridad",573,838,7);t("riesgo",573,851,7);
   t("nombre",96,892,7);t("dni",543,892,7);
