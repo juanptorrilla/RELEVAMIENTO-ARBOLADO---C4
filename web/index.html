@@ -381,7 +381,7 @@ async function createPdf(saveLocal){
   if(obs){
     const maxObsWidth=550*s1;
     const maxObsLines=5;
-    let obsFontSize=6.0;
+    let obsFontSize=5.0;
     const wrapObservations=(value,size)=>{
       const result=[];
       const paragraphs=String(value).replace(/\\r/g,"").split("\\n");
@@ -403,8 +403,8 @@ async function createPdf(saveLocal){
       return result;
     };
     let obsLines=wrapObservations(obs,obsFontSize);
-    while(obsLines.length>maxObsLines && obsFontSize>4.5){
-      obsFontSize=Math.max(4.5,obsFontSize-0.25);
+    while(obsLines.length>maxObsLines && obsFontSize>4.0){
+      obsFontSize=Math.max(4.0,obsFontSize-0.25);
       obsLines=wrapObservations(obs,obsFontSize);
     }
     if(obsLines.length>maxObsLines){
@@ -416,7 +416,7 @@ async function createPdf(saveLocal){
       obsLines[maxObsLines-1]=lastLine+"...";
     }
     obsLines.slice(0,maxObsLines).forEach((line,i)=>{
-      if(line)putText(p1,line,100,707+i*11,s1,obsFontSize);
+      if(line)putText(p1,line,100,707+i*10,s1,obsFontSize);
     });
   }
   putText(p1,$("superficie").value,165+8,759,s1,4.8*0.86);putText(p1,$("codigo_baldosa").value,165+8,771,s1,4.8*0.86);putText(p1,$("pluvial").value,165+8,783,s1,4.8*0.86);putText(p1,$("cordon").value,165+8,794,s1,4.8*0.86);putText(p1,$("k").value,165+8,805,s1,4.8*0.86);putText(p1,$("sup_total").value,165+8,816,s1,4.8*0.86);
