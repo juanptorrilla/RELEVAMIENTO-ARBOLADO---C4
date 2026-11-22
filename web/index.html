@@ -191,11 +191,11 @@ button.secondary{background:#e8efea;color:#244c39}
 </section>
 <section id="historySection"><h2>Guardado e historial</h2>
 <p class="note">Los relevamientos se guardan automáticamente en este dispositivo. Podés recuperar uno anterior o eliminarlo.</p>
-<div class="actions" style="margin:7px 0"><button id="saveRecord" type="button" class="secondary">Guardar relevamiento</button><button id="recoverDrive" type="button" class="secondary">Recuperar desde Drive</button></div>
+<div class="actions" style="margin:7px 0"><button id="saveRecord" type="button" class="secondary">Guardar relevamiento</button><button id="recoverDrive" type="button" class="secondary">Recuperar PDF</button><input id="recoverPdfFile" type="file" accept="application/pdf,.pdf" hidden></div>
 <div id="historyList" class="status">Todavía no hay relevamientos guardados.</div></section>
 <section><div class="actions">
 <button id="generate" type="button">Generar PDF completo</button>
-<button id="openPdf" type="button" class="secondary" disabled>Ver último PDF</button><button id="sharePdf" type="button" class="secondary">Enviar PDF a Drive</button><button id="sendSheet" type="button" class="secondary">Enviar datos a planilla</button><button id="openDeny" type="button" class="secondary">Denegar reclamo</button>
+<button id="sharePdf" type="button" class="secondary">Enviar PDF a Drive</button><button id="sendSheet" type="button" class="secondary">Enviar datos a planilla</button><button id="openDeny" type="button" class="secondary">Denegar reclamo</button>
 <button id="reset" type="button" class="secondary">Limpiar formulario</button>
 </div><p class="status" id="status">El relevamiento se guarda en este dispositivo. Los envíos a Drive y a la planilla son acciones voluntarias y requieren conexión a internet.</p></section>
 </div>
@@ -422,6 +422,9 @@ async function createPdf(saveLocal){
    }
   }
   if(selectedInspector && selectedInspector.signature){const sig=await doc.embedPng(dataUrlToBytes(selectedInspector.signature));p1.drawImage(sig,{x:313*s1,y:topY(p1.getHeight(),891,s1),width:104*s1,height:32*s1});}else if(hasSignature){const sig=await doc.embedPng(canvas.toDataURL());p1.drawImage(sig,{x:313*s1,y:topY(p1.getHeight(),891,s1),width:104*s1,height:32*s1});}
+  const recoverySnapshot=formSnapshot();
+  recoverySnapshot.photos=[];
+  doc.setSubject("C4_RELEVAMIENTO_V1:"+JSON.stringify(recoverySnapshot));
   const out=await doc.save();
   const cleanPart=v=>(v||"").trim().replace(/[\\\\/:*?"<>|]+/g," ").replace(/\\s+/g," ");
   const fileName=((cleanPart($("calle").value)+" "+cleanPart($("numero").value)).trim()||"Acta de inspeccion")+".pdf";
@@ -440,7 +443,6 @@ async function createPdf(saveLocal){
      if(downloads){const stored=await downloads.savePdf({fileName:lastPdfName,data:base64});lastDownloadUri=stored.uri;savedInDownloads=true;}
     }
    }catch(nativeErr){console.warn("No se pudo guardar el PDF en Descargas de Android",nativeErr);}
-   $("openPdf").disabled=false;
    if(!savedInDownloads){const a=document.createElement("a");a.href=lastPdfBlobUrl;a.download=lastPdfName;a.click();}
    $("status").textContent=savedInDownloads?"PDF generado y guardado en Descargas/Comuna 4 - Relevamientos: "+lastPdfName:"PDF generado: "+lastPdfName+". Se intentó descargarlo.";
   }
@@ -451,20 +453,28 @@ async function createPdf(saveLocal){
 }
 $("generate").onclick=()=>createPdf(true);
 function bytesToBase64(bytes){let binary="";const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk){binary+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+chunk,bytes.length)));}return btoa(binary);}
-$("openPdf").addEventListener("click",async()=>{try{const downloads=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Downloads;if(lastDownloadUri&&downloads&&downloads.openPdf){await downloads.openPdf({uri:lastDownloadUri});}else if(lastPdfBlobUrl){window.open(lastPdfBlobUrl,"_blank");}else{$("status").textContent="Primero generá un PDF.";}}catch(e){console.error(e);$("status").textContent="No se pudo abrir el PDF: "+e.message;}});
+
 const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbyXus7qgt5v8XZF2rmmMIcVKZpBEs4abA6yL7RDNU90UbnudUxhQJrzKJeIYz4cRGLj/exec";
 async function getEndpoint(){return APPS_SCRIPT_URL;}
 async function postAppsScript(payload){const url=await getEndpoint();if(!url)throw new Error("No se configuró la URL de Apps Script.");const http=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.CapacitorHttp;if(http&&http.post){const r=await http.post({url,headers:{"Content-Type":"application/json"},data:payload,connectTimeout:30000,readTimeout:60000});return typeof r.data==="string"?JSON.parse(r.data):r.data;}const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});return await r.json();}
 const APP_TOKEN="C4-ARBOLADO-2026-PLANILLA-4";
-$("recoverDrive").addEventListener("click",async()=>{
- const btn=$("recoverDrive");try{if(!navigator.onLine)throw new Error("Necesitás conexión a internet para recuperar desde Drive.");btn.disabled=true;$("status").textContent="Buscando relevamientos guardados en Google Drive...";
- const result=await postAppsScript({action:"listActas",token:APP_TOKEN});if(!result||result.ok!==true)throw new Error(result&&result.error||"No se pudo consultar Drive.");
- const items=result.items||[];if(!items.length){$("status").textContent="No se encontraron relevamientos guardados en Drive.";return;}
- const menu=items.map((x,i)=>(i+1)+". "+x.fileName+" · "+(x.savedAt?new Date(x.savedAt).toLocaleString("es-AR"):"fecha no disponible")).join("\n");
- const choice=prompt("Elegí el número del relevamiento que querés recuperar:\n\n"+menu);if(choice===null)return;const index=Number(choice)-1;if(!Number.isInteger(index)||index<0||index>=items.length)throw new Error("La selección no es válida.");
- const got=await postAppsScript({action:"getActa",token:APP_TOKEN,fileId:items[index].fileId});if(!got||got.ok!==true||!got.snapshot)throw new Error(got&&got.error||"El archivo no contiene datos recuperables.");
- await restoreSnapshot(got.snapshot);await saveRecord();$("status").textContent="Relevamiento recuperado desde Drive: "+items[index].fileName;window.scrollTo({top:0,behavior:"smooth"});
- }catch(e){console.error(e);$("status").textContent="No se pudo recuperar desde Drive: "+e.message;}finally{btn.disabled=false;}
+$("recoverDrive").addEventListener("click",()=>{$("recoverPdfFile").click();});
+$("recoverPdfFile").addEventListener("change",async()=>{
+ const input=$("recoverPdfFile"),file=input.files&&input.files[0];if(!file)return;
+ try{
+  $("recoverDrive").disabled=true;
+  $("status").textContent="Leyendo el PDF y recuperando los datos...";
+  if(!window.PDFLib||!PDFLib.PDFDocument)throw new Error("No está disponible el lector de PDF.");
+  const pdf=await PDFLib.PDFDocument.load(await file.arrayBuffer());
+  const subject=pdf.getSubject()||"",prefix="C4_RELEVAMIENTO_V1:";
+  if(!subject.startsWith(prefix))throw new Error("Este PDF no contiene datos recuperables. Los PDF generados antes de esta actualización no incluyen el respaldo interno.");
+  let snapshot;try{snapshot=JSON.parse(subject.slice(prefix.length));}catch(_){throw new Error("No se pudieron interpretar los datos del PDF.");}
+  if(!snapshot||!snapshot.fields||!snapshot.boxes)throw new Error("El PDF no contiene un relevamiento completo.");
+  await restoreSnapshot(snapshot);await saveDraft();
+  $("status").textContent="Datos recuperados de "+file.name+". Revisalos y, si corresponde, presioná «Enviar datos a planilla». No se envió nada automáticamente.";
+  window.scrollTo({top:0,behavior:"smooth"});
+ }catch(e){console.error(e);$("status").textContent="No se pudo recuperar el PDF: "+e.message;}
+ finally{$("recoverDrive").disabled=false;input.value="";}
 });
 $("openDeny").addEventListener("click",()=>{if(!$("aviso").value.trim()){ $("status").textContent="Completá el número de reclamo (AVISO) antes de denegar.";return;}$("formContent").hidden=true;$("denyScreen").hidden=false;$("denyStatus").textContent="";window.scrollTo(0,0);});
 $("cancelDeny").addEventListener("click",()=>{$("denyScreen").hidden=true;$("formContent").hidden=false;window.scrollTo(0,0);});
