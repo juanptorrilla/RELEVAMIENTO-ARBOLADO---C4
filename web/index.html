@@ -163,7 +163,7 @@ button.secondary{background:#e8efea;color:#244c39}
 <label class="check"><input type="checkbox" id="seguimiento"> G. Seguimiento</label>
 <label class="check"><input type="checkbox" id="vereda_elevada"> H. Vereda elevada</label>
 </div></section>
-<section><h2>Observaciones</h2><div class="field"><textarea id="observaciones" placeholder="Observaciones del relevamiento..."></textarea></div></section>
+<section><h2>Observaciones</h2><div class="field"><textarea id="observaciones" maxlength="1000" placeholder="Observaciones del relevamiento..."></textarea></div></section>
 <section><h2>Datos complementarios de vereda y entorno</h2><div class="grid">
 <div class="field"><label>Superficie (m²)</label><input id="superficie" inputmode="decimal"></div>
 <div class="field"><label>Código de baldosa</label><input id="codigo_baldosa"></div>
@@ -374,67 +374,48 @@ async function createPdf(saveLocal){
   t("calle",117,211,8);t("numero",383,211,8);t("especie",326,187,8);
   putText(p1,$("altura").value,170,251,s1,6*0.86);putText(p1,$("dap").value,325,251,s1,6*0.86);
   putText(p1,$("cav_long").value,538,350,s1,6*0.86);putText(p1,$("pared").value,538,365,s1,6*0.86);
-  t("enfermedades",500,496,7);
-  // Observaciones: ajustar el texto al ancho de los renglones del acta
-  // y limitarlo al espacio disponible, sin invadir los campos inferiores.
-  const obs=$("observaciones").value;
+  t("enfermeda  // Observaciones: adaptar el tamaño de letra para que el texto completo
+  // entre en cinco renglones, sin truncarlo ni invadir otros campos.
+  const obs=$("observaciones").value.slice(0,1000);
   if(obs){
     const maxObsWidth=550*s1;
     const maxObsLines=5;
-    let obsFontSize=5.0;
     const wrapObservations=(value,size)=>{
       const result=[];
       const paragraphs=String(value).replace(/\r/g,"").split("\n");
-      paragraphs.forEach(paragraph=>{
+      for(const paragraph of paragraphs){
         const words=paragraph.trim().split(/\s+/).filter(Boolean);
-        if(!words.length){if(paragraph==="")result.push("");return;}
+        if(!words.length){if(paragraph==="")result.push("");continue;}
         let current="";
-        words.forEach(word=>{
-          // Si una cadena no contiene espacios y supera el ancho del renglón,
-          // dividirla por caracteres para evitar que salga del margen del acta.
+        for(const word of words){
           let remaining=word;
           while(remaining && font.widthOfTextAtSize(remaining,size)>maxObsWidth){
             let cut=1;
-            while(cut<remaining.length && font.widthOfTextAtSize(remaining.slice(0,cut+1),size)<=maxObsWidth){
-              cut++;
-            }
+            while(cut<remaining.length && font.widthOfTextAtSize(remaining.slice(0,cut+1),size)<=maxObsWidth)cut++;
             const piece=remaining.slice(0,cut);
-            if(current){
-              result.push(current);
-              current="";
-            }
+            if(current){result.push(current);current="";}
             result.push(piece);
             remaining=remaining.slice(cut);
           }
-          if(!remaining)return;
+          if(!remaining)continue;
           const candidate=current?current+" "+remaining:remaining;
-          if(font.widthOfTextAtSize(candidate,size)<=maxObsWidth){
-            current=candidate;
-          }else{
-            if(current)result.push(current);
-            current=remaining;
-          }
-        });
+          if(font.widthOfTextAtSize(candidate,size)<=maxObsWidth)current=candidate;
+          else{if(current)result.push(current);current=remaining;}
+        }
         if(current)result.push(current);
-      });
+      }
       return result;
     };
+    let obsFontSize=5.0;
     let obsLines=wrapObservations(obs,obsFontSize);
-    while(obsLines.length>maxObsLines && obsFontSize>4.0){
-      obsFontSize=Math.max(4.0,obsFontSize-0.25);
+    while(obsLines.length>maxObsLines && obsFontSize>2.0){
+      obsFontSize=Math.max(2.0,obsFontSize-0.25);
       obsLines=wrapObservations(obs,obsFontSize);
     }
     if(obsLines.length>maxObsLines){
-      obsLines=obsLines.slice(0,maxObsLines);
-      let lastLine=obsLines[maxObsLines-1];
-      while(lastLine && font.widthOfTextAtSize(lastLine+"...",obsFontSize)>maxObsWidth){
-        lastLine=lastLine.slice(0,-1).trimEnd();
-      }
-      obsLines[maxObsLines-1]=lastLine+"...";
+      throw new Error("Las observaciones no entran completas en los cinco renglones. Reducí el texto.");
     }
-    obsLines.slice(0,maxObsLines).forEach((line,i)=>{
-      if(line)putText(p1,line,100,707+i*10,s1,obsFontSize);
-    });
+    obsLines.forEach((line,i)=>{if(line)putText(p1,line,100,707+i*10,s1,obsFontSize);});
   }
   putText(p1,$("superficie").value,165+8,759,s1,4.8*0.86);putText(p1,$("codigo_baldosa").value,165+8,771,s1,4.8*0.86);putText(p1,$("pluvial").value,165+8,783,s1,4.8*0.86);putText(p1,$("cordon").value,165+8,794,s1,4.8*0.86);putText(p1,$("k").value,165+8,805,s1,4.8*0.86);putText(p1,$("sup_total").value,165+8,816,s1,4.8*0.86);
   t("prioridad",573,838,7);t("riesgo",573,851,7);
