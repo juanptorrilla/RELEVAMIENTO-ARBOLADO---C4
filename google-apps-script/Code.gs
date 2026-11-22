@@ -60,6 +60,7 @@ function saveTree_(r) {
   const treeId = String(r.treeId || '').trim();
   if (!aviso) throw new Error('El número de reclamo (AVISO) está vacío. No se modificó la planilla.');
   if (!submissionId) throw new Error('Falta el identificador del envío.');
+  if (!treeId) throw new Error('Completá el campo ID del árbol para poder actualizarlo sin duplicar filas.');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -102,6 +103,10 @@ function saveTree_(r) {
     }
 
     const values = [[r.fecha || '',r.intervencion || '',r.especie || '',r.dap || '',r.altura || '',r.m2 || '',r.codigoBaldosa || '',r.riesgo || '',r.observacion || '',r.inspector || '']];
+    // Guardar el ID del árbol en la columna B para que las recuperaciones posteriores
+    // siempre apunten a esta misma fila, aun cuando ya tenga datos en I:R.
+    sh.getRange(target,2).setNumberFormat('@');
+    sh.getRange(target,2).setValue(treeId);
     const numeroRaw = r.numero != null ? r.numero : r['N°'];
     const numero = numeroRaw == null ? '' : String(numeroRaw);
     let chapaActualizada = false;
