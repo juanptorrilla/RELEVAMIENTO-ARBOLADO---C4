@@ -57,10 +57,8 @@ function getActa_(p) {
 function saveTree_(r) {
   const aviso = String(r.aviso || '').trim();
   const submissionId = String(r.submissionId || '').trim();
-  const treeId = String(r.treeId || '').trim();
   if (!aviso) throw new Error('El número de reclamo (AVISO) está vacío. No se modificó la planilla.');
   if (!submissionId) throw new Error('Falta el identificador del envío.');
-  if (!treeId) throw new Error('Completá el campo ID del árbol para poder actualizarlo sin duplicar filas.');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -77,37 +75,50 @@ function saveTree_(r) {
     const last = sh.getLastRow();
     if (last < 2) throw new Error('La planilla no contiene números de reclamo.');
 
-    // Buscar todas las filas del AVISO en la columna A.
+    // Buscar todas las filas que tengan el mismo número de reclamo en la columna A.
     const avisos = sh.getRange(2,1,last-1,1).getDisplayValues().flat().map(v => String(v).trim());
     const rows = [];
     avisos.forEach((v,i) => { if (v === aviso) rows.push(i+2); });
-    if (!rows.length) throw new Error('No se encontró el reclamo ' + aviso + ' en la columna A. No se escribió en ninguna fila.');
-
-    // El campo ID de la aplicación se conserva en la columna B al crear árboles adicionales.
-    // Si coincide, se actualiza esa fila incluso cuando I:R ya contiene datos.
-    let target = null;
-    let matchedExistingTree = false;
-    if (treeId) {
-      for (const row of rows) {
-        const currentTreeId = String(sh.getRange(row,2).getDisplayValue() || '').trim();
-        if (currentTreeId === treeId) { target = row; matchedExistingTree = true; break; }
-      }
+    if (!rows.length) {
+      throw new Error('No se encontró el reclamo ' + aviso + ' en la columna A. No se escribió en ninguna fila.');
     }
 
-    // Si no existe ese ID, es un árbol nuevo: reutilizar una fila hermana vacía o crear otra.
+    // Si hay una fila del reclamo sin datos del árbol en I:R, completar esa fila.
+    let target = rows.find(row =>
+      sh.getRange(row,9,1,10).getDisplayValues()[0].every(v => String(v).trim() === '')
+    );
+    let addedAdditionalTree = false;
+
+    // Si todas las filas del reclamo ya tienen datos del árbol, agregar una fila
+    // inmediatamente debajo de la última fila existente para ese mismo reclamo.
     if (!target) {
-      target = rows.find(row => sh.getRange(row,9,1,10).getDisplayValues()[0].every(v => String(v).trim() === ''));
-    }
-    if (!target) {
-      target = sh.getLastRow()+1;
-      sh.getRange(rows[0],1,1,24).copyTo(sh.getRange(target,1,1,24), {contentsOnly:false});
+      const lastClaimRow = rows[rows.length - 1];
+      sh.insertRowAfter(lastClaimRow);
+      target = lastClaimRow + 1;
+      // Copiar la estructura de la fila del mismo reclamo para conservar formato
+      // y los datos generales existentes, sin escribir identificadores en la columna B.
+      sh.getRange(lastClaimRow,1,1,24).copyTo(
+        sh.getRange(target,1,1,24),
+        {contentsOnly:false}
+      );
+      addedAdditionalTree = true;
     }
 
-    const values = [[r.fecha || '',r.intervencion || '',r.especie || '',r.dap || '',r.altura || '',r.m2 || '',r.codigoBaldosa || '',r.riesgo || '',r.observacion || '',r.inspector || '']];
-    // Guardar el ID del árbol en la columna B para que las recuperaciones posteriores
-    // siempre apunten a esta misma fila, aun cuando ya tenga datos en I:R.
-    sh.getRange(target,2).setNumberFormat('@');
-    sh.getRange(target,2).setValue(treeId);
+    const values = [[
+      r.fecha || '',
+      r.intervencion || '',
+      r.especie || '',
+      r.dap || '',
+      r.altura || '',
+      r.m2 || '',
+      r.codigoBaldosa || '',
+      r.riesgo || '',
+      r.observacion || '',
+      r.inspector || ''
+    ]];
+
+    // Los datos del árbol se escriben exclusivamente en I:R.
+    // La columna B no se utiliza ni se modifica.
     const numeroRaw = r.numero != null ? r.numero : r['N°'];
     const numero = numeroRaw == null ? '' : String(numeroRaw);
     let chapaActualizada = false;
@@ -124,12 +135,16 @@ function saveTree_(r) {
     sh.getRange(target,9,1,10).setValues(values);
     SpreadsheetApp.flush();
     props.setProperty(sentKey, new Date().toISOString());
+
     return {
       ok:true,
-      message:(matchedExistingTree ? 'Datos del árbol existente actualizados' : 'Datos del árbol nuevo registrados') + ' para el reclamo ' + aviso + ' (fila ' + target + ').' + (chapaActualizada ? ' Se actualizó la CHAPA CATASTRAL (columna C).' : ''),
+      message:(addedAdditionalTree
+        ? 'Se agregó una línea para un árbol adicional'
+        : 'Se completaron los datos del árbol') +
+        ' del reclamo ' + aviso + ' (fila ' + target + ').' +
+        (chapaActualizada ? ' Se actualizó la CHAPA CATASTRAL (columna C).' : ''),
       row:target,
-      treeId:treeId,
-      updatedExistingTree:matchedExistingTree,
+      addedAdditionalTree:addedAdditionalTree,
       chapaActualizada:chapaActualizada
     };
   } finally {
