@@ -86,10 +86,11 @@ function saveTree_(r) {
     // El campo ID de la aplicación se conserva en la columna B al crear árboles adicionales.
     // Si coincide, se actualiza esa fila incluso cuando I:R ya contiene datos.
     let target = null;
+    let matchedExistingTree = false;
     if (treeId) {
       for (const row of rows) {
         const currentTreeId = String(sh.getRange(row,2).getDisplayValue() || '').trim();
-        if (currentTreeId === treeId) { target = row; break; }
+        if (currentTreeId === treeId) { target = row; matchedExistingTree = true; break; }
       }
     }
 
@@ -125,10 +126,10 @@ function saveTree_(r) {
     props.setProperty(sentKey, new Date().toISOString());
     return {
       ok:true,
-      message:(treeId && rows.includes(target) ? 'Datos del árbol existente actualizados' : 'Datos del árbol registrados') + ' para el reclamo ' + aviso + ' (fila ' + target + ').' + (chapaActualizada ? ' Se actualizó la CHAPA CATASTRAL (columna C).' : ''),
+      message:(matchedExistingTree ? 'Datos del árbol existente actualizados' : 'Datos del árbol nuevo registrados') + ' para el reclamo ' + aviso + ' (fila ' + target + ').' + (chapaActualizada ? ' Se actualizó la CHAPA CATASTRAL (columna C).' : ''),
       row:target,
       treeId:treeId,
-      updatedExistingTree:!!(treeId && rows.includes(target)),
+      updatedExistingTree:matchedExistingTree,
       chapaActualizada:chapaActualizada
     };
   } finally {
