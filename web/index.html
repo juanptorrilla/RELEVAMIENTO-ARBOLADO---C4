@@ -390,12 +390,29 @@ async function createPdf(saveLocal){
         if(!words.length){if(paragraph==="")result.push("");return;}
         let current="";
         words.forEach(word=>{
-          const candidate=current?current+" "+word:word;
+          // Si una cadena no contiene espacios y supera el ancho del renglón,
+          // dividirla por caracteres para evitar que salga del margen del acta.
+          let remaining=word;
+          while(remaining && font.widthOfTextAtSize(remaining,size)>maxObsWidth){
+            let cut=1;
+            while(cut<remaining.length && font.widthOfTextAtSize(remaining.slice(0,cut+1),size)<=maxObsWidth){
+              cut++;
+            }
+            const piece=remaining.slice(0,cut);
+            if(current){
+              result.push(current);
+              current="";
+            }
+            result.push(piece);
+            remaining=remaining.slice(cut);
+          }
+          if(!remaining)return;
+          const candidate=current?current+" "+remaining:remaining;
           if(font.widthOfTextAtSize(candidate,size)<=maxObsWidth){
             current=candidate;
           }else{
             if(current)result.push(current);
-            current=word;
+            current=remaining;
           }
         });
         if(current)result.push(current);
