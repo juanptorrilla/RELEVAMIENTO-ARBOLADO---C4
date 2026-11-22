@@ -384,9 +384,9 @@ async function createPdf(saveLocal){
     let obsFontSize=5.0;
     const wrapObservations=(value,size)=>{
       const result=[];
-      const paragraphs=String(value).replace(/\\r/g,"").split("\\n");
+      const paragraphs=String(value).replace(/\r/g,"").split("\n");
       paragraphs.forEach(paragraph=>{
-        const words=paragraph.trim().split(/\\s+/).filter(Boolean);
+        const words=paragraph.trim().split(/\s+/).filter(Boolean);
         if(!words.length){if(paragraph==="")result.push("");return;}
         let current="";
         words.forEach(word=>{
