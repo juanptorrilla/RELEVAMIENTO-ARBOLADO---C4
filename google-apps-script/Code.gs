@@ -163,7 +163,7 @@ function saveExtraction_(r, aviso, submissionId) {
     const sh = ss.getSheets().find(s => s.getSheetId() === EXTRACCIONES_SHEET_GID);
     if (!sh) throw new Error('No se encontró la pestaña de EXTRACCIONES SLA con gid 0.');
     if (sh.getLastRow() === 0) {
-      sh.getRange(1,1,1,5).setValues([['N° RECLAMO','CALLE','ALTURA','INTERVENCIÓN','FECHA DE RELEVAMIENTO']]);
+      sh.getRange(1,1,1,5).setValues([['N° RECLAMO','DIRECCION','ALTURA','INTERVENCION','FECHA DE RELEVAMIENTO']]);
     }
     sh.appendRow([aviso,calle,altura,intervencion,r.fecha || '']);
     SpreadsheetApp.flush();
