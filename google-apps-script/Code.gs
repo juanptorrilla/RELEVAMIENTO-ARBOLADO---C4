@@ -311,35 +311,18 @@ function saveTree_(r) {
         r.inspector || ''
       ]];
 
-      // Identificar el árbol ya registrado por sus características físicas.
-      // Fecha, intervención, observación e inspector pueden cambiar entre
-      // relevamientos y no deben provocar una fila adicional.
+      // La chapa catastral (columna C) identifica el árbol dentro del AVISO.
+      // Misma chapa: actualizar la misma fila. Chapa distinta: conservar
+      // el registro anterior y agregar una fila para el nuevo árbol.
       const norm = function(v) {
         return String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toUpperCase();
       };
-      const identityIndexes = [2,3,4,5,6]; // especie, DAP, altura, M2 y código de baldosa
-      const newIdentity = identityIndexes.map(function(i) { return norm(values[0][i]); });
-      const hasIdentity = newIdentity.some(function(v) { return v !== ''; });
+      const numeroBuscado = norm(numero);
 
-      if (hasIdentity) {
-        target = rows.find(function(row) {
-          const existing = sh.getRange(row,9,1,10).getDisplayValues()[0];
-          const oldIdentity = identityIndexes.map(function(i) { return norm(existing[i]); });
-          return oldIdentity.some(function(v) { return v !== ''; }) &&
-            oldIdentity.every(function(v,i) { return v === newIdentity[i]; });
-        });
-      }
+      target = rows.find(function(row) {
+        return norm(sh.getRange(row,3).getDisplayValue()) === numeroBuscado;
+      });
 
-      // Si no es un árbol ya registrado, usar una fila vacía del mismo AVISO.
-      if (!target) {
-        target = rows.find(function(row) {
-          const arbol = sh.getRange(row,9,1,10).getDisplayValues()[0];
-          return arbol.every(function(v) { return String(v).trim() === ''; });
-        });
-      }
-
-      // Nueva fila únicamente cuando se trata de otro árbol y ya no hay
-      // una fila libre asociada al AVISO.
       if (!target) {
         const lastClaimRow = rows[rows.length - 1];
         sh.insertRowAfter(lastClaimRow);
@@ -386,14 +369,10 @@ function saveTree_(r) {
       // ALTURA se toma del campo N° enviado por la aplicación.
       const calle = getClaimStreetForExtraction_(aviso);
 
-      const nextRow = extSh.getLastRow() + 1;
-      extSh.getRange(nextRow,1,1,5).setValues([[
-        aviso,
-        calle,
-        numero,
-        intervencion,
-        fecha
-      ]]);
+      // En EXTRACCIONES SLA, AVISO + chapa catastral identifican el árbol.
+      // Si ambos coinciden, actualizar esa fila; si cambia la chapa, agregar
+      // una nueva fila sin borrar los registros anteriores.
+      const extractionRow = upsertExtractionRow_(extSh, aviso, calle, numero, intervencion, fecha);
       SpreadsheetApp.flush();
 
       props.setProperty(extractionKey, new Date().toISOString());
@@ -414,6 +393,55 @@ function saveTree_(r) {
   } finally {
     lock.releaseLock();
   }
+}
+
+
+// --------------------------------------------------
+// INSERTAR O ACTUALIZAR EN EXTRACCIONES SLA
+// Con AVISO: AVISO + chapa. Sin AVISO: CALLE + chapa.
+// --------------------------------------------------
+
+function upsertExtractionRow_(sh, aviso, calle, numero, intervencion, fecha) {
+  const norm = function(v) {
+    return String(v == null ? '' : v).trim().replace(/\\s+/g, ' ').toUpperCase();
+  };
+
+  const avisoKey = norm(aviso);
+  const calleKey = norm(calle);
+  const chapaKey = norm(numero);
+  const last = sh.getLastRow();
+  let targetRow = null;
+
+  if (last >= 2) {
+    const existing = sh.getRange(2,1,last - 1,3).getDisplayValues();
+
+    for (let i = 0; i < existing.length; i++) {
+      const rowAviso = norm(existing[i][0]);
+      const rowCalle = norm(existing[i][1]);
+      const rowChapa = norm(existing[i][2]);
+
+      const sameTree = avisoKey
+        ? rowAviso === avisoKey && rowChapa === chapaKey
+        : !rowAviso && rowCalle === calleKey && rowChapa === chapaKey;
+
+      if (sameTree) {
+        targetRow = i + 2;
+        break;
+      }
+    }
+  }
+
+  if (!targetRow) targetRow = last + 1;
+
+  sh.getRange(targetRow,1,1,5).setValues([[
+    aviso || '',
+    calle,
+    numero,
+    intervencion,
+    fecha
+  ]]);
+
+  return targetRow;
 }
 
 // --------------------------------------------------
@@ -487,14 +515,9 @@ function saveExtractionDirect_(r) {
       extSh.getRange(1,1,1,headers.length).setValues([headers]);
     }
 
-    const nextRow = extSh.getLastRow() + 1;
-    extSh.getRange(nextRow,1,1,5).setValues([[
-      '',
-      calle,
-      numero,
-      intervencion,
-      fecha
-    ]]);
+    // Sin AVISO, CALLE + chapa catastral identifican la extracción.
+    // Misma calle y chapa: actualizar la fila; chapa distinta: agregar otra.
+    const extractionRow = upsertExtractionRow_(extSh, '', calle, numero, intervencion, fecha);
 
     SpreadsheetApp.flush();
 
@@ -503,7 +526,7 @@ function saveExtractionDirect_(r) {
     return {
       ok:true,
       message:'Extracción de oficio registrada correctamente en EXTRACCIONES SLA. No se modificó RECLAMOS SUACI SLA FINAL.',
-      row:nextRow,
+      row:extractionRow,
       extractionRegistered:true,
       claimSheetModified:false
     };
