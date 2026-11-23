@@ -41,6 +41,10 @@ function doPost(e) {
     if (p.action === 'listActas') return json_(listActas_());
     if (p.action === 'getActa') return json_(getActa_(p));
 
+    if (p.action === 'saveExtractionDirect') {
+      return json_(saveExtractionDirect_(p.record || {}));
+    }
+
     if (p.action === 'saveTree') {
       const record = p.record || {};
       const aviso = String(record.aviso || '').trim();
