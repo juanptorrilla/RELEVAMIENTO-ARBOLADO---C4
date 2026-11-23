@@ -311,9 +311,12 @@ function saveTree_(r) {
         r.inspector || ''
       ]];
 
-      // La chapa catastral (columna C) identifica el árbol dentro del AVISO.
-      // Misma chapa: actualizar la misma fila. Chapa distinta: conservar
-      // el registro anterior y agregar una fila para el nuevo árbol.
+      // Regla de identificación y corrección:
+      // 1) Si ya existe AVISO + chapa, actualizar esa misma fila.
+      // 2) Si la chapa cambió y todavía hay una fila original de ese AVISO
+      //    sin datos de intervención (I:R vacías), corregir esa fila original.
+      // 3) Si todas las filas del AVISO ya tienen intervención, el árbol es
+      //    adicional: insertar una nueva fila y conservar las anteriores.
       const norm = function(v) {
         return String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toUpperCase();
       };
@@ -324,13 +327,26 @@ function saveTree_(r) {
       });
 
       if (!target) {
-        const lastClaimRow = rows[rows.length - 1];
-        sh.insertRowAfter(lastClaimRow);
-        target = lastClaimRow + 1;
-        sh.getRange(lastClaimRow,1,1,24).copyTo(
-          sh.getRange(target,1,1,24), {contentsOnly:false}
-        );
-        addedAdditionalTree = true;
+        const filaOriginalSinIntervencion = rows.find(function(row) {
+          const datosArbol = sh.getRange(row,9,1,10).getDisplayValues()[0];
+          return datosArbol.every(function(valor) {
+            return String(valor == null ? '' : valor).trim() === '';
+          });
+        });
+
+        if (filaOriginalSinIntervencion) {
+          // Primera acta: reemplaza la chapa errónea en la fila del reclamo.
+          target = filaOriginalSinIntervencion;
+        } else {
+          // Árbol adicional: nueva fila, sin borrar ni vaciar los anteriores.
+          const lastClaimRow = rows[rows.length - 1];
+          sh.insertRowAfter(lastClaimRow);
+          target = lastClaimRow + 1;
+          sh.getRange(lastClaimRow,1,1,24).copyTo(
+            sh.getRange(target,1,1,24), {contentsOnly:false}
+          );
+          addedAdditionalTree = true;
+        }
       }
 
       sh.getRange(target,3).setNumberFormat('@');
@@ -403,7 +419,7 @@ function saveTree_(r) {
 
 function upsertExtractionRow_(sh, aviso, calle, numero, intervencion, fecha) {
   const norm = function(v) {
-    return String(v == null ? '' : v).trim().replace(/\\s+/g, ' ').toUpperCase();
+    return String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toUpperCase();
   };
 
   const avisoKey = norm(aviso);
@@ -413,8 +429,9 @@ function upsertExtractionRow_(sh, aviso, calle, numero, intervencion, fecha) {
   let targetRow = null;
 
   if (last >= 2) {
-    const existing = sh.getRange(2,1,last - 1,3).getDisplayValues();
+    const existing = sh.getRange(2,1,last - 1,5).getDisplayValues();
 
+    // Primero: misma combinación AVISO + chapa.
     for (let i = 0; i < existing.length; i++) {
       const rowAviso = norm(existing[i][0]);
       const rowCalle = norm(existing[i][1]);
@@ -429,9 +446,24 @@ function upsertExtractionRow_(sh, aviso, calle, numero, intervencion, fecha) {
         break;
       }
     }
+
+    // Si el AVISO existe pero la chapa fue corregida, reutilizar la fila
+    // original que todavía no tiene intervención cargada (columna D vacía).
+    if (!targetRow && avisoKey) {
+      for (let i = 0; i < existing.length; i++) {
+        if (
+          norm(existing[i][0]) === avisoKey &&
+          String(existing[i][3] || '').trim() === ''
+        ) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+    }
   }
 
-  if (!targetRow) targetRow = last + 1;
+  // Si ya hay intervención en las filas del AVISO, es otro árbol: agregar fila.
+  if (!targetRow) targetRow = Math.max(last + 1, 2);
 
   sh.getRange(targetRow,1,1,5).setValues([[
     aviso || '',
