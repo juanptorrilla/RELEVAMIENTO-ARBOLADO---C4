@@ -298,24 +298,6 @@ function saveTree_(r) {
           ' en la columna A. No se modificó la planilla.');
       }
 
-      target = rows.find(function(row) {
-        const arbol = sh.getRange(row,9,1,10).getDisplayValues()[0];
-        return arbol.every(function(v) { return String(v).trim() === ''; });
-      });
-
-      if (!target) {
-        const lastClaimRow = rows[rows.length - 1];
-        sh.insertRowAfter(lastClaimRow);
-        target = lastClaimRow + 1;
-        sh.getRange(lastClaimRow,1,1,24).copyTo(
-          sh.getRange(target,1,1,24), {contentsOnly:false}
-        );
-        addedAdditionalTree = true;
-      }
-
-      sh.getRange(target,3).setNumberFormat('@');
-      sh.getRange(target,3).setValue(numero);
-
       const values = [[
         fecha,
         intervencion,
@@ -329,7 +311,49 @@ function saveTree_(r) {
         r.inspector || ''
       ]];
 
+      // Identificar el árbol ya registrado por sus características físicas.
+      // Fecha, intervención, observación e inspector pueden cambiar entre
+      // relevamientos y no deben provocar una fila adicional.
+      const norm = function(v) {
+        return String(v == null ? '' : v).trim().replace(/\\s+/g, ' ').toUpperCase();
+      };
+      const identityIndexes = [2,3,4,5,6]; // especie, DAP, altura, M2 y código de baldosa
+      const newIdentity = identityIndexes.map(function(i) { return norm(values[0][i]); });
+      const hasIdentity = newIdentity.some(function(v) { return v !== ''; });
+
+      if (hasIdentity) {
+        target = rows.find(function(row) {
+          const existing = sh.getRange(row,9,1,10).getDisplayValues()[0];
+          const oldIdentity = identityIndexes.map(function(i) { return norm(existing[i]); });
+          return oldIdentity.some(function(v) { return v !== ''; }) &&
+            oldIdentity.every(function(v,i) { return v === newIdentity[i]; });
+        });
+      }
+
+      // Si no es un árbol ya registrado, usar una fila vacía del mismo AVISO.
+      if (!target) {
+        target = rows.find(function(row) {
+          const arbol = sh.getRange(row,9,1,10).getDisplayValues()[0];
+          return arbol.every(function(v) { return String(v).trim() === ''; });
+        });
+      }
+
+      // Nueva fila únicamente cuando se trata de otro árbol y ya no hay
+      // una fila libre asociada al AVISO.
+      if (!target) {
+        const lastClaimRow = rows[rows.length - 1];
+        sh.insertRowAfter(lastClaimRow);
+        target = lastClaimRow + 1;
+        sh.getRange(lastClaimRow,1,1,24).copyTo(
+          sh.getRange(target,1,1,24), {contentsOnly:false}
+        );
+        addedAdditionalTree = true;
+      }
+
+      sh.getRange(target,3).setNumberFormat('@');
+      sh.getRange(target,3).setValue(numero);
       sh.getRange(target,9,1,10).setValues(values);
+
       SpreadsheetApp.flush();
 
       // Registrar inmediatamente la primera escritura para que un reintento
