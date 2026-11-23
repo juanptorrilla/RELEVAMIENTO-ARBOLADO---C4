@@ -202,6 +202,7 @@ button.secondary{background:#e8efea;color:#244c39}
 <section id="denyScreen" hidden>
 <h2>Denegar reclamo</h2>
 <p class="note">El motivo y el complemento se incluirán en el correo al vecino. Las observaciones internas del relevamiento no se envían.</p>
+<div id="denyEditor">
 <div class="field"><label for="denyReason">Motivo de denegación</label><select id="denyReason">
 <option value="">Seleccioná un motivo...</option>
 <option>No corresponde extracción.</option>
@@ -216,7 +217,12 @@ button.secondary{background:#e8efea;color:#244c39}
 <option>Se sugiere reiterar el reclamo entre mayo y septiembre, período correspondiente a este tipo de poda.</option>
 </select></div>
 <div class="field" style="margin-top:8px"><label for="denyExtra">Complemento para el vecino (máximo 200 caracteres)</label><textarea id="denyExtra" maxlength="200" rows="3"></textarea><p class="note"><span id="denyCount">0</span>/200 caracteres</p></div>
-<div class="actions" style="margin-top:10px"><button id="sendDeny" type="button">Enviar denegación</button><button id="cancelDeny" type="button" class="secondary">Volver al relevamiento</button></div>
+<div class="actions" style="margin-top:10px"><button id="reviewDeny" type="button">Revisar correo</button><button id="cancelDeny" type="button" class="secondary">Volver al relevamiento</button></div>
+</div>
+<div id="denyPreviewPanel" hidden>
+<div class="field"><label for="denyEmailBody">Vista previa del correo (podés corregir el texto antes de enviarlo)</label><textarea id="denyEmailBody" rows="14" spellcheck="true" autocorrect="on" autocapitalize="sentences" autocomplete="on" style="width:100%;"></textarea></div>
+<div class="actions" style="margin-top:10px"><button id="confirmDeny" type="button">Confirmar envío</button><button id="editDeny" type="button" class="secondary">Volver a editar motivo</button><button id="cancelDenyPreview" type="button" class="secondary">Cancelar</button></div>
+</div>
 <p class="status" id="denyStatus"></p>
 </section>
 </main>
@@ -517,10 +523,14 @@ $("recoverPdfFile").addEventListener("change",async()=>{
  }catch(e){console.error(e);$("status").textContent="No se pudo recuperar el PDF: "+e.message;}
  finally{$("recoverDrive").disabled=false;input.value="";}
 });
-$("openDeny").addEventListener("click",()=>{if(!$("aviso").value.trim()){ $("status").textContent="Completá el número de reclamo (AVISO) antes de denegar.";return;}$("formContent").hidden=true;$("denyScreen").hidden=false;$("denyStatus").textContent="";window.scrollTo(0,0);});
-$("cancelDeny").addEventListener("click",()=>{$("denyScreen").hidden=true;$("formContent").hidden=false;window.scrollTo(0,0);});
+$("openDeny").addEventListener("click",()=>{if(!$("aviso").value.trim()){ $("status").textContent="Completá el número de reclamo (AVISO) antes de denegar.";return;}$("formContent").hidden=true;$("denyScreen").hidden=false;$("denyEditor").hidden=false;$("denyPreviewPanel").hidden=true;$("denyStatus").textContent="";window.scrollTo(0,0);});
+function closeDenyScreen(){$("denyScreen").hidden=true;$("formContent").hidden=false;$("denyEditor").hidden=false;$("denyPreviewPanel").hidden=true;$("denyStatus").textContent="";window.scrollTo(0,0);}
+$("cancelDeny").addEventListener("click",closeDenyScreen);
+$("cancelDenyPreview").addEventListener("click",closeDenyScreen);
 $("denyExtra").addEventListener("input",()=>$("denyCount").textContent=String($("denyExtra").value.length));
-$("sendDeny").addEventListener("click",async()=>{const reason=$("denyReason").value.trim();if(!reason){$("denyStatus").textContent="Seleccioná un motivo de denegación.";return;}if(!navigator.onLine){$("denyStatus").textContent="Necesitás conexión a internet para enviar la notificación.";return;}const btn=$("sendDeny");try{btn.disabled=true;$("denyStatus").textContent="Enviando la notificación al vecino...";const result=await postAppsScript({action:"denyClaim",token:APP_TOKEN,aviso:$("aviso").value.trim(),reason,extra:$("denyExtra").value.trim()});if(!result||result.ok!==true)throw new Error(result&&result.error||"El servidor no confirmó el envío.");$("denyStatus").textContent=result.message||"Notificación enviada.";}catch(e){console.error(e);$("denyStatus").textContent="No se pudo enviar la denegación: "+e.message;}finally{btn.disabled=false;}});
+$("reviewDeny").addEventListener("click",()=>{const reason=$("denyReason").value.trim();if(!reason){$("denyStatus").textContent="Seleccioná un motivo de denegación.";return;}const aviso=$("aviso").value.trim();const extra=$("denyExtra").value.trim();const body="Estimado/a vecino/a:\n\nEn relación con el reclamo "+aviso+", le informamos que no corresponde realizar la intervención solicitada por el siguiente motivo:\n\n"+reason+(extra?"\n\n"+extra:"")+"\n\nSaludos cordiales,\nÁrea de Arbolado\nComuna 4";$("denyEmailBody").value=body;$("denyEditor").hidden=true;$("denyPreviewPanel").hidden=false;$("denyStatus").textContent="Revisá el correo y corregí lo que consideres necesario antes de confirmar el envío.";window.scrollTo(0,0);});
+$("editDeny").addEventListener("click",()=>{$("denyPreviewPanel").hidden=true;$("denyEditor").hidden=false;$("denyStatus").textContent="Podés modificar el motivo o el complemento y volver a revisar el correo.";window.scrollTo(0,0);});
+$("confirmDeny").addEventListener("click",async()=>{const emailBody=$("denyEmailBody").value.trim();if(!emailBody){$("denyStatus").textContent="El texto del correo está vacío. Revisalo antes de enviar.";return;}if(!navigator.onLine){$("denyStatus").textContent="Necesitás conexión a internet para enviar la notificación.";return;}const btn=$("confirmDeny");try{btn.disabled=true;$("editDeny").disabled=true;$("cancelDenyPreview").disabled=true;$("denyStatus").textContent="Enviando el correo revisado al vecino...";const result=await postAppsScript({action:"denyClaim",token:APP_TOKEN,aviso:$("aviso").value.trim(),reason:$("denyReason").value.trim(),extra:$("denyExtra").value.trim(),emailBody});if(!result||result.ok!==true)throw new Error(result&&result.error||"El servidor no confirmó el envío.");$("denyStatus").textContent=result.message||"Notificación enviada.";if(result.alreadySent){$("denyStatus").textContent=result.message||"La notificación ya figuraba enviada. No se volvió a enviar.";}$("confirmDeny").textContent="Envío procesado";}catch(e){console.error(e);$("denyStatus").textContent="No se pudo enviar la denegación: "+e.message;}finally{btn.disabled=false;$("editDeny").disabled=false;$("cancelDenyPreview").disabled=false;}});
 
 $("sharePdf").addEventListener("click",async()=>{try{
  if(!navigator.onLine){$("status").textContent="No hay conexión a internet. Usá “Generar PDF completo” para guardar una copia en Descargas y enviarla a Drive cuando vuelva la conexión.";return;}
