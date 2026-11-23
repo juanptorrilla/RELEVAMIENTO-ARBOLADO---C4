@@ -315,7 +315,7 @@ function saveTree_(r) {
       // Fecha, intervención, observación e inspector pueden cambiar entre
       // relevamientos y no deben provocar una fila adicional.
       const norm = function(v) {
-        return String(v == null ? '' : v).trim().replace(/\\s+/g, ' ').toUpperCase();
+        return String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toUpperCase();
       };
       const identityIndexes = [2,3,4,5,6]; // especie, DAP, altura, M2 y código de baldosa
       const newIdentity = identityIndexes.map(function(i) { return norm(values[0][i]); });
