@@ -31,7 +31,7 @@ button.secondary{background:#e8efea;color:#244c39}
 .actions{display:flex;gap:7px;flex-wrap:wrap}
 #signature{width:100%;height:150px;border:1px dashed #8da596;border-radius:8px;touch-action:none;background:#fff}#signature.signature-locked{background:#f4f6f4;border-style:solid;opacity:.82}#entryScreen{max-width:560px;margin:12vh auto 0}#entryScreen select{min-height:46px} [hidden]{display:none!important}
 .photo-list{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;max-width:360px}
-.photo-list img{width:100%;height:125px;object-fit:contain;background:#f7f9f7;border-radius:8px;border:1px solid var(--line)}
+.photo-list img{width:100%;height:125px;object-fit:contain;background:#f7f9f7;border-radius:8px;border:1px solid var(--line)}.photo-item{position:relative;min-width:0}.photo-delete{position:absolute;top:5px;right:5px;width:25px;height:25px;padding:0;border:0;border-radius:50%;background:#b3261e;color:#fff;font-size:19px;font-weight:700;line-height:23px;text-align:center;cursor:pointer;box-shadow:0 1px 4px #0005}.photo-delete:active{transform:scale(.94)}
 .status{font-size:12px;color:#526258;margin-top:8px}
 .about-card{text-align:center;padding:12px 15px;margin-top:12px}.about-card h2{margin-bottom:8px}.about-copyright{font-size:12px;font-weight:650;color:#526258;margin:4px 0}.about-author{font-size:14px;font-weight:750;color:var(--green);margin:5px 0 2px}
 @media(max-width:540px){.grid,.checks{grid-template-columns:1fr}.initial-fields{grid-template-columns:1fr 1fr}.initial-fields .field:first-child{grid-column:1/-1}.photo-list{grid-template-columns:1fr}}
@@ -321,7 +321,7 @@ $("photosGalleryPick").addEventListener("click",async()=>{
  }catch(e){console.error(e);$("status").textContent="No se pudo abrir la galería: "+(e.message||e);}
  finally{$("photosGalleryPick").disabled=false;}
 });
-function renderPhotos(){const box=$("photoList");box.innerHTML="";photos.forEach((f,i)=>{const img=document.createElement("img");img.src=URL.createObjectURL(f);img.alt="Foto "+(i+1);box.appendChild(img);});}
+function renderPhotos(){const box=$("photoList");box.innerHTML="";photos.forEach((f,i)=>{const item=document.createElement("div");item.className="photo-item";const img=document.createElement("img");img.src=URL.createObjectURL(f);img.alt="Foto "+(i+1);const remove=document.createElement("button");remove.type="button";remove.className="photo-delete";remove.textContent="×";remove.setAttribute("aria-label","Borrar foto "+(i+1));remove.title="Borrar foto";remove.addEventListener("click",()=>{photos.splice(i,1);renderPhotos();scheduleSave();});item.appendChild(img);item.appendChild(remove);box.appendChild(item);});}
 const canvas=$("signature"),ctx=canvas.getContext("2d");let drawing=false,hasSignature=false;
 function resizeCanvas(){const r=canvas.getBoundingClientRect();const ratio=window.devicePixelRatio||1;const saved=hasSignature?canvas.toDataURL("image/png"):null;canvas.width=Math.round(r.width*ratio);canvas.height=Math.round(r.height*ratio);ctx.setTransform(ratio,0,0,ratio,0,0);ctx.lineWidth=2.4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#17231b";if(saved){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,r.width,r.height);im.src=saved;}}
 resizeCanvas();window.addEventListener("resize",resizeCanvas);
